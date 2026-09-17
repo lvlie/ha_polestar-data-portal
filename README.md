@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="resources/logo.svg" alt="Polestar Data Portal" width="280">
+  <img src="custom_components/polestar_data_portal/brand/icon.png" alt="Polestar" width="120">
 </p>
 
 <h1 align="center">Polestar Data Portal for Home Assistant</h1>
@@ -255,10 +255,16 @@ Generated files, all rebuilt by their scripts rather than edited by hand:
 | --- | --- |
 | `custom_components/polestar_data_portal/enums.py` | `scripts/generate_enums.py` |
 | `custom_components/polestar_data_portal/translations/en.json` | `scripts/generate_translations.py` |
-| `custom_components/polestar_data_portal/brand/*.png` | `scripts/generate_brand_assets.py` |
 
-`scripts/check_generated.py` fails the build if the first two drift from their
-sources; pre-commit runs it for you.
+`scripts/check_generated.py` fails the build if either drifts from its source;
+pre-commit runs it for you.
+
+The brand assets in `custom_components/polestar_data_portal/brand/` are not
+generated. They are copied from
+[home-assistant/brands](https://github.com/home-assistant/brands/tree/master/custom_integrations/polestar_api),
+which is where Home Assistant keeps integration iconography. That directory
+holds `icon.png` and `icon@2x.png` only; there is no separate logo, and HACS
+requires just the icon.
 
 ## Disclaimer
 
@@ -285,9 +291,12 @@ You agree to hold the maintainers harmless from any claim arising out of your
 use of this integration or your use of the Polestar Data Portal through it.
 
 **Polestar** is a trademark of Polestar Performance AB. This project is not
-affiliated with, authorised by, or connected to Polestar in any way. The logo
-in this README is original artwork made for this project and is not Polestar's
-trademark artwork.
+affiliated with, authorised by, or connected to Polestar in any way. The icon
+shipped in `custom_components/polestar_data_portal/brand/` and shown at the top
+of this README is Polestar's mark, taken from the
+[Home Assistant brands repository](https://github.com/home-assistant/brands/tree/master/custom_integrations/polestar_api).
+It is used only to identify which vehicle this integration talks to, and its
+use here implies no endorsement by Polestar.
 
 ## Credits
 
