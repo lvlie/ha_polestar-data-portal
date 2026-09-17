@@ -15,18 +15,34 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import importlib
 import sys
+import types
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO))
+COMPONENT = REPO / "custom_components" / "polestar_data_portal"
 
-from custom_components.polestar_data_portal.api import (  # noqa: E402
-    PolestarDataPortalApi,
-)
-from custom_components.polestar_data_portal.const import (  # noqa: E402
-    API_DOMAIN_PATHS,
-)
+
+def _load_client_modules() -> tuple[type, dict[str, str]]:
+    """Import the API client without pulling in Home Assistant.
+
+    ``custom_components.polestar_data_portal.__init__`` imports Home Assistant,
+    but the API client itself only needs aiohttp. Binding the package name to
+    the component directory without executing its ``__init__`` lets this check
+    run on a bare runner, so it stays a fast contract test rather than a second
+    Home Assistant install.
+    """
+    package = types.ModuleType("_polestar_client")
+    package.__path__ = [str(COMPONENT)]
+    sys.modules["_polestar_client"] = package
+
+    api = importlib.import_module("_polestar_client.api")
+    const = importlib.import_module("_polestar_client.const")
+    return api.PolestarDataPortalApi, const.API_DOMAIN_PATHS
+
+
+PolestarDataPortalApi, API_DOMAIN_PATHS = _load_client_modules()
 
 
 async def run(base_url: str) -> int:
