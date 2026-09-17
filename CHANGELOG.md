@@ -5,6 +5,30 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-09-17
+
+Follow-up to 0.1.0, from re-checking the integration against the same car once
+it had stopped charging. The API turns out to omit more than empty
+collections: it drops scalar fields too, whenever their value is falsy.
+
+### Fixed
+
+- **Charging power, current and voltage read `unknown` while not charging.**
+  A car actively charging reports all three; the same car on a scheduled
+  charge sends none of them. They now read `0`, which is both the true value
+  and what a measurement sensor needs to avoid gaps in its history and in the
+  energy dashboard. An explicitly null value still reads unknown, since that
+  is the API saying it does not know.
+- **`Charge now` read `unknown` once switched off.** The override flag is
+  present while it is on and omitted entirely when off; an absent flag inside
+  a payload that did arrive now reads `off`.
+
+### Added
+
+- A second recorded fixture for the same vehicle with its charge scheduled
+  rather than running, and tests asserting a parked car produces no new
+  unknown entities. Every value in it is synthetic.
+
 ## [0.1.0] - 2026-09-17
 
 First release validated against a real vehicle rather than only against the
@@ -88,5 +112,6 @@ Initial release.
 - Diagnostics that redact credentials, VINs, coordinates and charge-location
   names.
 
+[0.1.1]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.1.1
 [0.1.0]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.1.0
 [0.0.1]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.0.1

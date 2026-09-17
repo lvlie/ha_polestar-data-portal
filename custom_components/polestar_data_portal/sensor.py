@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from typing import Any
 
@@ -111,6 +111,32 @@ def _plain(*keys: str) -> Callable[[dict[str, Any]], Any]:
 def _number(*keys: str) -> Callable[[dict[str, Any]], Any]:
     """Read a numeric value, tolerating string encodings."""
     return lambda data: to_float(nested(data, *keys))
+
+
+def _number_or_zero(*keys: str) -> Callable[[dict[str, Any]], Any]:
+    """Read a numeric value, treating an absent key as zero.
+
+    The API omits the charging rate fields entirely while the car is not
+    drawing power: charging at 1188 W reports amps, watts and volts, and the
+    same car on a scheduled charge sends none of the three. Reporting unknown
+    there would punch holes in the history of a measurement sensor and in the
+    energy dashboard, when the true value is zero. Only used where absence
+    genuinely means zero rather than unsupported.
+    """
+
+    def value(data: dict[str, Any]) -> float | None:
+        if not data:
+            return None
+        parent = nested(data, *keys[:-1]) if len(keys) > 1 else data
+        if not isinstance(parent, Mapping):
+            return None
+        # Only an omitted key means zero. An explicit null is the API saying
+        # it does not know, and must stay unknown.
+        if keys[-1] not in parent:
+            return 0.0
+        return to_float(parent[keys[-1]])
+
+    return value
 
 
 def _scaled(factor: float, *keys: str) -> Callable[[dict[str, Any]], Any]:
@@ -445,7 +471,7 @@ SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.CURRENT,
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=_number("chargingCurrentAmps"),
+        value_fn=_number_or_zero("chargingCurrentAmps"),
     ),
     PolestarSensorEntityDescription(
         key="charging_power",
@@ -454,7 +480,7 @@ SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.POWER,
         native_unit_of_measurement=UnitOfPower.WATT,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=_number("chargingPowerWatts"),
+        value_fn=_number_or_zero("chargingPowerWatts"),
     ),
     PolestarSensorEntityDescription(
         key="charging_voltage",
@@ -463,7 +489,7 @@ SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=_number("chargingVoltageVolts"),
+        value_fn=_number_or_zero("chargingVoltageVolts"),
     ),
     _duration(
         key="charging_time_to_full",

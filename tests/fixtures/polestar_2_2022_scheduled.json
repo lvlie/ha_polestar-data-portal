@@ -1,0 +1,280 @@
+{
+  "amp_limit": {
+    "ampLimit": {
+      "ampLimit": 10,
+      "id": "00000000",
+      "source": "RCS",
+      "updatedAt": "1767268800000",
+      "updatedAtTimestamp": {
+        "nanos": 0,
+        "seconds": "1767268800"
+      }
+    },
+    "id": "00000000",
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "updatedAt": "1767268800000",
+    "updatedAtTimestamp": {
+      "nanos": 0,
+      "seconds": "1767268800"
+    },
+    "vin": "YV1CZ0000000000000"
+  },
+  "availability": {
+    "availabilityStatus": "AVAILABILITY_STATUS_AVAILABLE",
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "timestamp": {
+      "nanos": 0,
+      "seconds": "1767268800"
+    },
+    "usageMode": "USAGE_MODE_INACTIVE",
+    "vin": "YV1CZ0000000000000"
+  },
+  "battery": {
+    "averageEnergyConsumptionKwhPer100Km": 18.0,
+    "batteryChargeLevelPercentage": 55,
+    "chargerConnectionStatus": "CHARGER_CONNECTION_STATUS_CONNECTED",
+    "chargerPowerStatus": "CHARGER_POWER_STATUS_NO_POWER_AVAILABLE",
+    "chargingStatus": "CHARGING_STATUS_SCHEDULED",
+    "chargingStatusV2": "CHARGING_STATUS_V2_SCHEDULED",
+    "chargingType": "CHARGING_TYPE_AC",
+    "estimatedChargingTimeToFullMinutes": 120,
+    "estimatedDistanceToEmptyKm": 250,
+    "estimatedDistanceToEmptyMiles": 155,
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "timestamp": {
+      "nanos": 0,
+      "seconds": "1767268800"
+    },
+    "vin": "YV1CZ0000000000000"
+  },
+  "charge_locations": {
+    "id": "00000000",
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "utc0": true,
+    "vin": "YV1CZ0000000000000"
+  },
+  "charge_now": {
+    "id": "00000000",
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "syncedOverrideChargeTimer": {
+      "updatedAt": "1767268800000",
+      "updatedAtTimestamp": {
+        "nanos": 0,
+        "seconds": "1767268800"
+      }
+    },
+    "vin": "YV1CZ0000000000000"
+  },
+  "exterior": {
+    "alarm": "ALARM_STATUS_IDLE",
+    "centralLock": "LOCK_STATUS_LOCKED",
+    "frontLeftDoor": "OPEN_STATUS_CLOSED",
+    "frontLeftWindow": "OPEN_STATUS_CLOSED",
+    "frontRightDoor": "OPEN_STATUS_CLOSED",
+    "frontRightWindow": "OPEN_STATUS_CLOSED",
+    "hood": "OPEN_STATUS_CLOSED",
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "rearLeftDoor": "OPEN_STATUS_CLOSED",
+    "rearLeftWindow": "OPEN_STATUS_CLOSED",
+    "rearRightDoor": "OPEN_STATUS_CLOSED",
+    "rearRightWindow": "OPEN_STATUS_CLOSED",
+    "tailgate": "OPEN_STATUS_CLOSED",
+    "tailgateLock": "LOCK_STATUS_LOCKED",
+    "tankLid": "OPEN_STATUS_CLOSED",
+    "timestamp": {
+      "nanos": 0,
+      "seconds": "1767268800"
+    },
+    "vin": "YV1CZ0000000000000"
+  },
+  "global_charge_timer": {
+    "globalChargeTimer": {
+      "activated": false,
+      "metadata": {
+        "id": "00000000",
+        "source": "car",
+        "syncStatus": {
+          "value": "SYNCED"
+        },
+        "updatedAt": "1767268800000",
+        "updatedAtTimestamp": {
+          "nanos": 0,
+          "seconds": "1767268800"
+        }
+      },
+      "start": {
+        "hour": 1,
+        "minute": 0,
+        "timeZone": {
+          "offsetMinutes": 60
+        }
+      },
+      "stop": {
+        "hour": 5,
+        "minute": 30,
+        "timeZone": {
+          "offsetMinutes": 60
+        }
+      }
+    },
+    "id": "00000000",
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "pendingGlobalChargeTimer": {
+      "metadata": {}
+    },
+    "vin": "YV1CZ0000000000000"
+  },
+  "health": {
+    "brakeFluidLevelWarning": "BRAKE_FLUID_LEVEL_WARNING_NO_WARNING",
+    "daysToService": 300,
+    "distanceToServiceKm": 10000,
+    "engineCoolantLevelWarning": "ENGINE_COOLANT_LEVEL_WARNING_NO_WARNING",
+    "engineHoursToService": 500,
+    "lightWarnings": {
+      "brakeLightCenter": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "brakeLightLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "brakeLightRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "daytimeRunningLightLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "daytimeRunningLightRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "fogLightFront": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "fogLightRear": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "highBeamLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "highBeamRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "lowBeamLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "lowBeamRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "positionLightFrontLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "positionLightFrontRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "positionLightRear": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "registrationPlateLight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "turnIndicatorFrontLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "turnIndicatorFrontRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "turnIndicatorRearLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "turnIndicatorRearRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING"
+    },
+    "lowVoltageBatteryWarning": "LOW_VOLTAGE_BATTERY_WARNING_NO_WARNING",
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "oilLevelWarning": "OIL_LEVEL_WARNING_NO_WARNING",
+    "serviceWarning": "SERVICE_WARNING_NO_WARNING",
+    "timestamp": {
+      "nanos": 0,
+      "seconds": "1767268800"
+    },
+    "vin": "YV1CZ0000000000000",
+    "washerFluidLevelWarning": "WASHER_FLUID_LEVEL_WARNING_NO_WARNING"
+  },
+  "location": {
+    "altitude": "0",
+    "coordinate": {
+      "latitude": 0.0,
+      "longitude": 0.0
+    },
+    "heading": 90,
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "speed": "0",
+    "timestamp": {
+      "nanos": 0,
+      "seconds": "1767268800"
+    },
+    "vin": "YV1CZ0000000000000"
+  },
+  "odometer": {
+    "averageSpeedKmPerHour": 50,
+    "averageSpeedKmPerHourAutomatic": 55,
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "odometerMeters": 12345600,
+    "timestamp": {
+      "nanos": 0,
+      "seconds": "1767268800"
+    },
+    "tripMeterAutomaticKm": 45.599998474121094,
+    "tripMeterManualKm": 123.4,
+    "vin": "YV1CZ0000000000000"
+  },
+  "parking_climate_timer": {
+    "id": "00000000",
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "parkingClimateTimers": [
+      {
+        "activated": false,
+        "index": 0,
+        "metadata": {
+          "id": "00000000",
+          "updatedAt": "1767268800000",
+          "updatedAtTimestamp": {
+            "nanos": 0,
+            "seconds": "1767268800"
+          }
+        },
+        "readyAt": {
+          "hour": 7,
+          "timeZone": {
+            "offsetMinutes": 60
+          }
+        },
+        "repeat": false,
+        "timerId": "00000000",
+        "weekdays": [
+          "MONDAY"
+        ]
+      }
+    ],
+    "updatedAt": "1767268800000",
+    "updatedAtTimestamp": {
+      "nanos": 0,
+      "seconds": "1767268800"
+    },
+    "utc0": true,
+    "vin": "YV1CZ0000000000000"
+  },
+  "parking_climatization": {
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "requestedFrontLeftSeat": "HEATING_INTENSITY_UNSPECIFIED",
+    "requestedFrontRightSeat": "HEATING_INTENSITY_UNSPECIFIED",
+    "requestedRearLeftSeat": "HEATING_INTENSITY_UNSPECIFIED",
+    "requestedRearRightSeat": "HEATING_INTENSITY_UNSPECIFIED",
+    "requestedSteeringWheelHeating": "HEATING_INTENSITY_UNSPECIFIED",
+    "runningStatus": "RUNNING_STATUS_OFF",
+    "runtimeLeftMinutes": 0,
+    "timestamp": {
+      "nanos": 0,
+      "seconds": "1767268800"
+    },
+    "ventilation": "VENTILATION_NEUTRAL",
+    "vin": "YV1CZ0000000000000"
+  },
+  "pre_cleaning": {
+    "lastCycleCompleted": {
+      "seconds": "1767268800"
+    },
+    "lastCycleValid": false,
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "runningStatus": "RUNNING_STATUS_OFF",
+    "runtimeLeftMinutes": 0,
+    "timestamp": {
+      "nanos": 0,
+      "seconds": "1767268800"
+    },
+    "vin": "YV1CZ0000000000000"
+  },
+  "target_soc": {
+    "id": "00000000",
+    "metaReceivedAt": "2026-01-01T12:00:00.000Z",
+    "targetSoc": {
+      "batteryChargeTargetLevel": 80,
+      "chargeTargetLevelSettingType": "CUSTOM",
+      "id": "00000000",
+      "source": "RCS",
+      "timestamp": {
+        "nanos": 0,
+        "seconds": "1767268800"
+      },
+      "updatedAt": "1767268800000"
+    },
+    "timestamp": {
+      "nanos": 0,
+      "seconds": "1767268800"
+    },
+    "updatedAt": "1767268800000",
+    "vin": "YV1CZ0000000000000"
+  }
+}

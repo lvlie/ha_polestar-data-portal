@@ -146,3 +146,50 @@ def test_light_warnings_cover_only_the_fitted_lamps(real: dict[str, Any]) -> Non
     values = {key: value for key, _, value in _evaluate(real)}
     # The aggregate still works off the subset that is reported.
     assert values["light_failure"] is False
+
+
+# The same car with its charge scheduled rather than running. Captured live:
+# the API drops the charging rate fields and the Charge Now flag entirely.
+SCHEDULED_FIXTURE = FIXTURE.with_name("polestar_2_2022_scheduled.json")
+
+
+@pytest.fixture(scope="module")
+def scheduled() -> dict[str, Any]:
+    """Return the recorded payload for a scheduled, non-charging car."""
+    return json.loads(SCHEDULED_FIXTURE.read_text())
+
+
+def test_charging_rates_read_zero_when_not_charging(scheduled: dict[str, Any]) -> None:
+    """Power, current and voltage are omitted while no power is drawn.
+
+    Reporting unknown would leave gaps in a measurement sensor's history and
+    in the energy dashboard, when the real value is zero.
+    """
+    battery = scheduled["battery"]
+    for key in ("chargingPowerWatts", "chargingCurrentAmps", "chargingVoltageVolts"):
+        assert key not in battery
+
+    values = {key: value for key, _, value in _evaluate(scheduled)}
+    assert values["charging_power"] == 0
+    assert values["charging_current"] == 0
+    assert values["charging_voltage"] == 0
+    # The status itself still reports what the car is doing.
+    assert values["charging_status"] == "scheduled"
+
+
+def test_charge_now_reads_off_when_the_flag_is_dropped(
+    scheduled: dict[str, Any],
+) -> None:
+    """Charge Now omits its override flag once it is switched off."""
+    assert "override" not in scheduled["charge_now"]["syncedOverrideChargeTimer"]
+
+    values = {key: value for key, _, value in _evaluate(scheduled)}
+    assert values["charge_now"] is False
+
+
+def test_scheduled_car_has_no_new_unknown_entities(scheduled: dict[str, Any]) -> None:
+    """A parked, scheduled car is the common case; it must not be full of gaps."""
+    unknown = {
+        key for key, enabled, value in _evaluate(scheduled) if enabled and value is None
+    }
+    assert unknown == EXPECTED_UNKNOWN

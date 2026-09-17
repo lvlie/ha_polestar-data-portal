@@ -135,6 +135,25 @@ def _problem(
     )
 
 
+def _override_flag(*keys: str) -> Callable[[dict[str, Any]], bool | None]:
+    """Read a boolean that the API omits when it is false.
+
+    Charge Now reports ``{"override": true}`` while it is on and drops the key
+    altogether once it is off, so an absent flag inside a payload we did
+    receive means false, not unknown.
+    """
+
+    def is_on(data: dict[str, Any]) -> bool | None:
+        if not data:
+            return None
+        parent = nested(data, *keys[:-1]) if len(keys) > 1 else data
+        if not isinstance(parent, dict):
+            return None
+        return bool(parent.get(keys[-1], False))
+
+    return is_on
+
+
 def _non_empty_list(
     *,
     key: str,
@@ -400,7 +419,7 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[PolestarBinarySensorEntityDescription, ...] = 
         key="charge_now",
         translation_key="charge_now",
         api_domain=DOMAIN_CHARGE_NOW,
-        is_on_fn=lambda data: nested(data, "syncedOverrideChargeTimer", "override"),
+        is_on_fn=_override_flag("syncedOverrideChargeTimer", "override"),
     ),
     PolestarBinarySensorEntityDescription(
         key="pending_charge_now",
@@ -408,7 +427,7 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[PolestarBinarySensorEntityDescription, ...] = 
         api_domain=DOMAIN_CHARGE_NOW,
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
-        is_on_fn=lambda data: nested(data, "pendingOverrideChargeTimer", "override"),
+        is_on_fn=_override_flag("pendingOverrideChargeTimer", "override"),
     ),
     PolestarBinarySensorEntityDescription(
         key="charge_timer_activated",
