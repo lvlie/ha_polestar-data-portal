@@ -1,0 +1,869 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Polestar Data Portal credentials",
+        "description": "Sign in at {portal_url} and open **Data Portal API → Credential** to create the credentials for this integration. Start from the portal home page rather than a country URL, because the address differs per market. Copy the four values from the credential page below.",
+        "data": {
+          "client_id": "App client ID",
+          "client_secret": "Client secret",
+          "account_id": "Expected x-client-id header",
+          "token_url": "M2M token endpoint",
+          "delegated_account_id": "Delegated account e-mail (optional)"
+        },
+        "data_description": {
+          "client_id": "The App client ID shown on the credential page.",
+          "client_secret": "The client secret shown once when the credential is created. Create a new credential if you no longer have it.",
+          "account_id": "The 'Expected x-client-id header' value from the credential page. This is your account ID and is not the same as the App client ID.",
+          "token_url": "The 'M2M Token Endpoint' shown on the credential page.",
+          "delegated_account_id": "Only for third-party credentials: the account e-mail whose shared vehicles you want to read. Leave empty to use your own vehicles."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Update Polestar Data Portal credentials",
+        "description": "The stored credentials were rejected. Data Portal credentials can expire or be revoked; sign in at {portal_url}, open **Data Portal API → Credential** and create a new credential, then enter it below.",
+        "data": {
+          "client_id": "App client ID",
+          "client_secret": "Client secret",
+          "account_id": "Expected x-client-id header",
+          "token_url": "M2M token endpoint",
+          "delegated_account_id": "Delegated account e-mail (optional)"
+        },
+        "data_description": {
+          "client_id": "The App client ID shown on the credential page.",
+          "client_secret": "The client secret shown once when the credential is created. Create a new credential if you no longer have it.",
+          "account_id": "The 'Expected x-client-id header' value from the credential page. This is your account ID and is not the same as the App client ID.",
+          "token_url": "The 'M2M Token Endpoint' shown on the credential page.",
+          "delegated_account_id": "Only for third-party credentials: the account e-mail whose shared vehicles you want to read. Leave empty to use your own vehicles."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the Data Portal. Check the M2M token endpoint and your internet connection.",
+      "invalid_auth": "The Data Portal rejected these credentials. Check the App client ID and client secret, and confirm the credential has not expired.",
+      "invalid_token_url": "That does not look like a valid token endpoint.",
+      "insecure_token_url": "The token endpoint must use https. Your client secret is sent in the request body, so it would otherwise travel over the network unencrypted.",
+      "no_vehicles": "The credentials work, but no vehicles are linked to this account. Check that the vehicle is registered in the EU or EEA and shared with this Data Portal account.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This Data Portal account is already set up.",
+      "reauth_successful": "Credentials updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polestar Data Portal options",
+        "description": "Each poll spends one API request per data domain per vehicle. Polestar allows roughly 10,000 requests per day, so keep the interval high enough to stay within your budget.",
+        "data": {
+          "scan_interval_minutes": "Update interval (minutes)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "alarm": {
+        "name": "Alarm"
+      },
+      "at_charge_location": {
+        "name": "At charge location"
+      },
+      "brake_fluid_warning": {
+        "name": "Brake fluid warning"
+      },
+      "central_lock": {
+        "name": "Central lock"
+      },
+      "charge_now": {
+        "name": "Charge now"
+      },
+      "charge_port": {
+        "name": "Charge port"
+      },
+      "charge_timer_activated": {
+        "name": "Charge timer"
+      },
+      "climatization_error": {
+        "name": "Climatization error"
+      },
+      "climatization_warning": {
+        "name": "Climatization warning"
+      },
+      "engine_coolant_warning": {
+        "name": "Engine coolant warning"
+      },
+      "front_left_door": {
+        "name": "Front left door"
+      },
+      "front_left_window": {
+        "name": "Front left window"
+      },
+      "front_right_door": {
+        "name": "Front right door"
+      },
+      "front_right_window": {
+        "name": "Front right window"
+      },
+      "hood": {
+        "name": "Hood"
+      },
+      "light_brake_light_any": {
+        "name": "Brake light any light"
+      },
+      "light_brake_light_center": {
+        "name": "Brake light center light"
+      },
+      "light_brake_light_left": {
+        "name": "Brake light left light"
+      },
+      "light_brake_light_right": {
+        "name": "Brake light right light"
+      },
+      "light_cornering_light_left": {
+        "name": "Cornering light left light"
+      },
+      "light_cornering_light_right": {
+        "name": "Cornering light right light"
+      },
+      "light_daytime_running_light_any": {
+        "name": "Daytime running light any light"
+      },
+      "light_daytime_running_light_left": {
+        "name": "Daytime running light left light"
+      },
+      "light_daytime_running_light_right": {
+        "name": "Daytime running light right light"
+      },
+      "light_failure": {
+        "name": "Exterior light failure"
+      },
+      "light_fog_light_front": {
+        "name": "Fog light front light"
+      },
+      "light_fog_light_rear": {
+        "name": "Fog light rear light"
+      },
+      "light_fog_light_rear_left": {
+        "name": "Fog light rear left light"
+      },
+      "light_fog_light_rear_right": {
+        "name": "Fog light rear right light"
+      },
+      "light_high_beam_any": {
+        "name": "High beam any light"
+      },
+      "light_high_beam_left": {
+        "name": "High beam left light"
+      },
+      "light_high_beam_right": {
+        "name": "High beam right light"
+      },
+      "light_low_beam_any": {
+        "name": "Low beam any light"
+      },
+      "light_low_beam_left": {
+        "name": "Low beam left light"
+      },
+      "light_low_beam_right": {
+        "name": "Low beam right light"
+      },
+      "light_position_light_front": {
+        "name": "Position light front light"
+      },
+      "light_position_light_front_left": {
+        "name": "Position light front left light"
+      },
+      "light_position_light_front_right": {
+        "name": "Position light front right light"
+      },
+      "light_position_light_rear": {
+        "name": "Position light rear light"
+      },
+      "light_position_light_rear_left": {
+        "name": "Position light rear left light"
+      },
+      "light_position_light_rear_right": {
+        "name": "Position light rear right light"
+      },
+      "light_registration_plate_light": {
+        "name": "Registration plate light light"
+      },
+      "light_reverse_light_any": {
+        "name": "Reverse light any light"
+      },
+      "light_reverse_light_left": {
+        "name": "Reverse light left light"
+      },
+      "light_reverse_light_right": {
+        "name": "Reverse light right light"
+      },
+      "light_side_marker_light_any": {
+        "name": "Side marker light any light"
+      },
+      "light_side_marker_light_left": {
+        "name": "Side marker light left light"
+      },
+      "light_side_marker_light_right": {
+        "name": "Side marker light right light"
+      },
+      "light_turn_indicator_front_left": {
+        "name": "Turn indicator front left light"
+      },
+      "light_turn_indicator_front_right": {
+        "name": "Turn indicator front right light"
+      },
+      "light_turn_indicator_left": {
+        "name": "Turn indicator left light"
+      },
+      "light_turn_indicator_rear_left": {
+        "name": "Turn indicator rear left light"
+      },
+      "light_turn_indicator_rear_right": {
+        "name": "Turn indicator rear right light"
+      },
+      "light_turn_indicator_right": {
+        "name": "Turn indicator right light"
+      },
+      "light_turn_indicator_side_left": {
+        "name": "Turn indicator side left light"
+      },
+      "light_turn_indicator_side_right": {
+        "name": "Turn indicator side right light"
+      },
+      "low_voltage_battery_warning": {
+        "name": "12V battery warning"
+      },
+      "oil_level_warning": {
+        "name": "Oil level warning"
+      },
+      "pending_charge_now": {
+        "name": "Pending charge now"
+      },
+      "pre_cleaning_last_cycle_valid": {
+        "name": "Pre-cleaning last cycle valid"
+      },
+      "rear_left_door": {
+        "name": "Rear left door"
+      },
+      "rear_left_window": {
+        "name": "Rear left window"
+      },
+      "rear_right_door": {
+        "name": "Rear right door"
+      },
+      "rear_right_window": {
+        "name": "Rear right window"
+      },
+      "sunroof": {
+        "name": "Sunroof"
+      },
+      "tailgate": {
+        "name": "Tailgate"
+      },
+      "tailgate_lock": {
+        "name": "Tailgate lock"
+      },
+      "tyre_pressure_warning_front_left": {
+        "name": "Tyre pressure warning front left"
+      },
+      "tyre_pressure_warning_front_right": {
+        "name": "Tyre pressure warning front right"
+      },
+      "tyre_pressure_warning_rear_left": {
+        "name": "Tyre pressure warning rear left"
+      },
+      "tyre_pressure_warning_rear_right": {
+        "name": "Tyre pressure warning rear right"
+      },
+      "washer_fluid_warning": {
+        "name": "Washer fluid warning"
+      }
+    },
+    "device_tracker": {
+      "location": {
+        "name": "Location"
+      }
+    },
+    "sensor": {
+      "altitude": {
+        "name": "Altitude"
+      },
+      "amp_limit": {
+        "name": "Charging current limit"
+      },
+      "amp_limit_updated_at": {
+        "name": "Charging current limit updated"
+      },
+      "availability_status": {
+        "name": "Availability status",
+        "state": {
+          "available": "Available",
+          "unavailable": "Unavailable"
+        }
+      },
+      "availability_updated_at": {
+        "name": "Availability data updated"
+      },
+      "average_energy_consumption": {
+        "name": "Average consumption"
+      },
+      "average_energy_consumption_automatic": {
+        "name": "Average consumption (automatic trip)"
+      },
+      "average_energy_consumption_since_charge": {
+        "name": "Average consumption since charge"
+      },
+      "average_speed_automatic": {
+        "name": "Average speed (automatic trip)"
+      },
+      "average_speed_manual": {
+        "name": "Average speed"
+      },
+      "average_speed_since_charge": {
+        "name": "Average speed since charge"
+      },
+      "battery_charge_level": {
+        "name": "Battery"
+      },
+      "battery_updated_at": {
+        "name": "Battery data updated"
+      },
+      "cabin_air_quality_index": {
+        "name": "Cabin air quality index"
+      },
+      "cabin_particulate_matter": {
+        "name": "Cabin particulate matter"
+      },
+      "cabin_temperature": {
+        "name": "Cabin temperature"
+      },
+      "charge_location_arrived_at": {
+        "name": "Arrived at charge location"
+      },
+      "charge_locations": {
+        "name": "Charge locations"
+      },
+      "charge_timer_start": {
+        "name": "Charge timer start"
+      },
+      "charge_timer_stop": {
+        "name": "Charge timer stop"
+      },
+      "charge_timer_sync_status": {
+        "name": "Charge timer sync status",
+        "state": {
+          "syncing": "Syncing",
+          "synced": "Synced",
+          "retrying": "Retrying",
+          "retrying_car_offline": "Retrying car offline",
+          "error": "Error"
+        }
+      },
+      "charger_connection_status": {
+        "name": "Charger connection status",
+        "state": {
+          "connected": "Connected",
+          "disconnected": "Disconnected",
+          "fault": "Fault"
+        }
+      },
+      "charger_power_status": {
+        "name": "Charger power status",
+        "state": {
+          "no_power_available": "No power available",
+          "initialization": "Initialization",
+          "power_available_but_not_activated": "Power available but not activated",
+          "providing_power": "Providing power",
+          "fault": "Fault"
+        }
+      },
+      "charging_current": {
+        "name": "Charging current"
+      },
+      "charging_power": {
+        "name": "Charging power"
+      },
+      "charging_status": {
+        "name": "Charging status",
+        "state": {
+          "charging": "Charging",
+          "charge_level_is_good_to_go": "Charge level is good to go",
+          "charging_is_en_route": "Charging is en route",
+          "charging_towards_min_soc": "Charging towards min soc",
+          "idle": "Idle",
+          "scheduled": "Scheduled",
+          "scheduled_charging_cannot_complete": "Scheduled charging cannot complete",
+          "scheduled_charging_will_complete": "Scheduled charging will complete",
+          "discharging": "Discharging",
+          "discharging_v2h": "Discharging v2h",
+          "discharging_v2l": "Discharging v2l",
+          "smart_charging": "Smart charging",
+          "smart_charging_paused": "Smart charging paused",
+          "smart_charging_will_not_finish": "Smart charging will not finish",
+          "error": "Error",
+          "done": "Done"
+        }
+      },
+      "charging_status_legacy": {
+        "name": "Charging status (legacy)",
+        "state": {
+          "charging": "Charging",
+          "idle": "Idle",
+          "scheduled": "Scheduled",
+          "discharging": "Discharging",
+          "error": "Error",
+          "smart_charging": "Smart charging",
+          "smart_charging_paused": "Smart charging paused",
+          "done": "Done"
+        }
+      },
+      "charging_time_to_full": {
+        "name": "Charging time remaining"
+      },
+      "charging_time_to_minimum_soc": {
+        "name": "Charging time to minimum charge"
+      },
+      "charging_time_to_target_distance": {
+        "name": "Charging time to target range"
+      },
+      "charging_type": {
+        "name": "Charging type",
+        "state": {
+          "none": "None",
+          "ac": "Ac",
+          "dc": "Dc",
+          "wireless": "Wireless"
+        }
+      },
+      "charging_voltage": {
+        "name": "Charging voltage"
+      },
+      "climatization_ending_at": {
+        "name": "Climatization ending at"
+      },
+      "climatization_runtime_left": {
+        "name": "Climatization runtime left"
+      },
+      "climatization_start_reason": {
+        "name": "Climatization start reason",
+        "state": {
+          "remote": "Remote",
+          "manually_from_car": "Manually from car",
+          "timer": "Timer",
+          "keep_climate": "Keep climate"
+        }
+      },
+      "climatization_started_at": {
+        "name": "Climatization started at"
+      },
+      "climatization_status": {
+        "name": "Parking climatization",
+        "state": {
+          "on": "On",
+          "off": "Off",
+          "pending": "Pending"
+        }
+      },
+      "current_charge_location": {
+        "name": "Current charge location"
+      },
+      "days_to_service": {
+        "name": "Days to service"
+      },
+      "discharge_energy_available": {
+        "name": "Dischargeable energy"
+      },
+      "discharge_energy_available_increase": {
+        "name": "Dischargeable energy increase"
+      },
+      "discharge_power_limit": {
+        "name": "Discharge power limit"
+      },
+      "distance_to_service": {
+        "name": "Distance to service"
+      },
+      "energy_consumption_automatic_battery": {
+        "name": "Energy consumption battery (automatic trip)"
+      },
+      "energy_consumption_automatic_climate": {
+        "name": "Energy consumption climate (automatic trip)"
+      },
+      "energy_consumption_automatic_driving": {
+        "name": "Energy consumption driving (automatic trip)"
+      },
+      "energy_consumption_automatic_other": {
+        "name": "Energy consumption other (automatic trip)"
+      },
+      "energy_consumption_manual_battery": {
+        "name": "Energy consumption battery (trip)"
+      },
+      "energy_consumption_manual_climate": {
+        "name": "Energy consumption climate (trip)"
+      },
+      "energy_consumption_manual_driving": {
+        "name": "Energy consumption driving (trip)"
+      },
+      "energy_consumption_manual_other": {
+        "name": "Energy consumption other (trip)"
+      },
+      "energy_consumption_percentage_automatic_battery": {
+        "name": "Energy share battery (automatic trip)"
+      },
+      "energy_consumption_percentage_automatic_climate": {
+        "name": "Energy share climate (automatic trip)"
+      },
+      "energy_consumption_percentage_automatic_driving": {
+        "name": "Energy share driving (automatic trip)"
+      },
+      "energy_consumption_percentage_automatic_other": {
+        "name": "Energy share other (automatic trip)"
+      },
+      "energy_consumption_percentage_manual_battery": {
+        "name": "Energy share battery (trip)"
+      },
+      "energy_consumption_percentage_manual_climate": {
+        "name": "Energy share climate (trip)"
+      },
+      "energy_consumption_percentage_manual_driving": {
+        "name": "Energy share driving (trip)"
+      },
+      "energy_consumption_percentage_manual_other": {
+        "name": "Energy share other (trip)"
+      },
+      "energy_consumption_percentage_since_charge_battery": {
+        "name": "Energy share battery (since charge)"
+      },
+      "energy_consumption_percentage_since_charge_climate": {
+        "name": "Energy share climate (since charge)"
+      },
+      "energy_consumption_percentage_since_charge_driving": {
+        "name": "Energy share driving (since charge)"
+      },
+      "energy_consumption_percentage_since_charge_other": {
+        "name": "Energy share other (since charge)"
+      },
+      "energy_consumption_since_charge_battery": {
+        "name": "Energy consumption battery (since charge)"
+      },
+      "energy_consumption_since_charge_climate": {
+        "name": "Energy consumption climate (since charge)"
+      },
+      "energy_consumption_since_charge_driving": {
+        "name": "Energy consumption driving (since charge)"
+      },
+      "energy_consumption_since_charge_other": {
+        "name": "Energy consumption other (since charge)"
+      },
+      "engine_hours_to_service": {
+        "name": "Engine hours to service"
+      },
+      "heading": {
+        "name": "Heading"
+      },
+      "location_updated_at": {
+        "name": "Location updated"
+      },
+      "main_climate_status": {
+        "name": "Main climate status",
+        "state": {
+          "on": "On",
+          "off": "Off"
+        }
+      },
+      "odometer": {
+        "name": "Odometer"
+      },
+      "odometer_updated_at": {
+        "name": "Odometer data updated"
+      },
+      "parking_climate_timers": {
+        "name": "Parking climate timers"
+      },
+      "pending_amp_limit": {
+        "name": "Pending charging current limit"
+      },
+      "pending_target_battery_charge_level": {
+        "name": "Pending charge limit"
+      },
+      "pre_cleaning_error": {
+        "name": "Pre cleaning error",
+        "state": {
+          "generic_error": "Generic error",
+          "interrupted": "Interrupted",
+          "fuel_low": "Fuel low",
+          "battery_low": "Battery low",
+          "not_connected_to_power": "Not connected to power",
+          "no_start_needed": "No start needed",
+          "service_required": "Service required",
+          "temporarily_not_available": "Temporarily not available",
+          "persistent_error_detected": "Persistent error detected",
+          "reached_max_runtime": "Reached max runtime"
+        }
+      },
+      "pre_cleaning_last_cycle_completed": {
+        "name": "Pre-cleaning last completed"
+      },
+      "pre_cleaning_measured_at": {
+        "name": "Pre-cleaning measured at"
+      },
+      "pre_cleaning_runtime_left": {
+        "name": "Pre-cleaning runtime left"
+      },
+      "pre_cleaning_start_reason": {
+        "name": "Pre cleaning start reason",
+        "state": {
+          "remote": "Remote",
+          "manually_from_car": "Manually from car",
+          "timer": "Timer",
+          "keep_climate": "Keep climate"
+        }
+      },
+      "pre_cleaning_status": {
+        "name": "Cabin pre-cleaning",
+        "state": {
+          "on": "On",
+          "off": "Off",
+          "pending": "Pending"
+        }
+      },
+      "preconditioning_ending_at": {
+        "name": "Preconditioning ending at"
+      },
+      "preconditioning_started_at": {
+        "name": "Preconditioning started at"
+      },
+      "preconditioning_status": {
+        "name": "Preconditioning status",
+        "state": {
+          "off": "Off",
+          "preconditioning_finished": "Preconditioning finished",
+          "on": "On",
+          "battery_temperature_optimal": "Battery temperature optimal",
+          "unavailable": "Unavailable"
+        }
+      },
+      "preconditioning_unavailable_reason": {
+        "name": "Preconditioning unavailable reason",
+        "state": {
+          "status_fault": "Status fault",
+          "charging_in_progress": "Charging in progress",
+          "low_energy": "Low energy",
+          "preconditioning_planned": "Preconditioning planned",
+          "preconditioning_in_progress": "Preconditioning in progress"
+        }
+      },
+      "range": {
+        "name": "Range"
+      },
+      "range_miles": {
+        "name": "Range (miles)"
+      },
+      "requested_cabin_temperature": {
+        "name": "Requested cabin temperature"
+      },
+      "requested_seat_heating_front_left": {
+        "name": "Requested seat heating front left",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "requested_seat_heating_front_right": {
+        "name": "Requested seat heating front right",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "requested_seat_heating_rear_left": {
+        "name": "Requested seat heating rear left",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "requested_seat_heating_rear_right": {
+        "name": "Requested seat heating rear right",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "requested_steering_wheel_heating": {
+        "name": "Requested steering wheel heating",
+        "state": {
+          "off": "Off",
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "service_warning": {
+        "name": "Service warning",
+        "state": {
+          "no_warning": "No warning",
+          "unknown_warning": "Unknown warning",
+          "regular_maintenance_almost_time_for_service": "Regular maintenance almost time for service",
+          "engine_hours_almost_time_for_service": "Engine hours almost time for service",
+          "distance_driven_almost_time_for_service": "Distance driven almost time for service",
+          "regular_maintenance_time_for_service": "Regular maintenance time for service",
+          "engine_hours_time_for_service": "Engine hours time for service",
+          "distance_driven_time_for_service": "Distance driven time for service",
+          "regular_maintenance_overdue_for_service": "Regular maintenance overdue for service",
+          "engine_hours_overdue_for_service": "Engine hours overdue for service",
+          "distance_driven_overdue_for_service": "Distance driven overdue for service"
+        }
+      },
+      "speed": {
+        "name": "Speed"
+      },
+      "target_battery_charge_level": {
+        "name": "Charge limit"
+      },
+      "target_soc_setting_type": {
+        "name": "Charge limit type",
+        "state": {
+          "daily": "Daily",
+          "long_trip": "Long trip",
+          "custom": "Custom"
+        }
+      },
+      "target_soc_updated_at": {
+        "name": "Charge limit updated"
+      },
+      "timer_battery_preconditioning": {
+        "name": "Timer battery preconditioning",
+        "state": {
+          "off": "Off",
+          "when_plugged": "When plugged",
+          "on": "On"
+        }
+      },
+      "timer_requested_cabin_temperature": {
+        "name": "Timer cabin temperature"
+      },
+      "timer_seat_heating_front_left": {
+        "name": "Timer seat heating front left",
+        "state": {
+          "off": "Off",
+          "level1": "Level1",
+          "level2": "Level2",
+          "level3": "Level3"
+        }
+      },
+      "timer_seat_heating_front_right": {
+        "name": "Timer seat heating front right",
+        "state": {
+          "off": "Off",
+          "level1": "Level1",
+          "level2": "Level2",
+          "level3": "Level3"
+        }
+      },
+      "timer_seat_heating_rear_left": {
+        "name": "Timer seat heating rear left",
+        "state": {
+          "off": "Off",
+          "level1": "Level1",
+          "level2": "Level2",
+          "level3": "Level3"
+        }
+      },
+      "timer_seat_heating_rear_right": {
+        "name": "Timer seat heating rear right",
+        "state": {
+          "off": "Off",
+          "level1": "Level1",
+          "level2": "Level2",
+          "level3": "Level3"
+        }
+      },
+      "timer_steering_wheel_heating": {
+        "name": "Timer steering wheel heating",
+        "state": {
+          "off": "Off",
+          "level1": "Level1",
+          "level2": "Level2",
+          "level3": "Level3"
+        }
+      },
+      "total_energy_consumption": {
+        "name": "Total energy consumption"
+      },
+      "total_energy_consumption_automatic": {
+        "name": "Total energy consumption (automatic trip)"
+      },
+      "total_energy_consumption_since_charge": {
+        "name": "Energy consumption since charge"
+      },
+      "trip_meter_automatic": {
+        "name": "Trip meter (automatic)"
+      },
+      "trip_meter_manual": {
+        "name": "Trip meter"
+      },
+      "trip_meter_since_charge": {
+        "name": "Trip meter since charge"
+      },
+      "tyre_pressure_front_left": {
+        "name": "Tyre pressure front left"
+      },
+      "tyre_pressure_front_right": {
+        "name": "Tyre pressure front right"
+      },
+      "tyre_pressure_rear_left": {
+        "name": "Tyre pressure rear left"
+      },
+      "tyre_pressure_rear_right": {
+        "name": "Tyre pressure rear right"
+      },
+      "tyre_reference_pressure_front": {
+        "name": "Tyre reference pressure front"
+      },
+      "tyre_reference_pressure_rear": {
+        "name": "Tyre reference pressure rear"
+      },
+      "unavailable_reason": {
+        "name": "Unavailable reason",
+        "state": {
+          "no_internet": "No internet",
+          "power_saving_mode": "Power saving mode",
+          "car_in_use": "Car in use",
+          "ota_installation_in_progress": "Ota installation in progress",
+          "stolen_vehicle_tracking_in_progress": "Stolen vehicle tracking in progress",
+          "service_mode_active": "Service mode active"
+        }
+      },
+      "usage_mode": {
+        "name": "Usage mode",
+        "state": {
+          "abandoned": "Abandoned",
+          "inactive": "Inactive",
+          "convenience": "Convenience",
+          "active": "Active",
+          "driving": "Driving",
+          "engine_on": "Engine on",
+          "engine_off": "Engine off"
+        }
+      },
+      "ventilation": {
+        "name": "Ventilation",
+        "state": {
+          "cooling": "Cooling",
+          "heating": "Heating",
+          "neutral": "Neutral"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,83 @@
+name: Bug report
+description: Something in the integration does not work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this.
+
+        **Before you post:** please remove your client ID, client secret,
+        `x-client-id` value, VIN and GPS coordinates from anything you paste.
+        Home Assistant's diagnostics download redacts these for you.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight
+      options:
+        - label: My vehicle was registered and delivered in the EU or EEA
+          required: true
+        - label: I can sign in at data-portal.polestar.com and see my vehicle
+          required: true
+        - label: I searched the existing issues
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Integration version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.2.3"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: entities
+    attributes:
+      label: Affected entities
+      description: Which entities are wrong, missing, or unavailable?
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: >-
+        Enable debug logging for `custom_components.polestar_data_portal` and
+        paste the relevant lines. Check them for secrets before posting.
+      render: text
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: >-
+        Optional but very helpful. Settings → Devices & services → Polestar
+        Data Portal → the three-dot menu → Download diagnostics. Credentials,
+        VINs and locations are redacted automatically.
+      render: json

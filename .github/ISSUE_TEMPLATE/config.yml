@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Polestar Data Portal access or credentials
+    url: https://data-portal.polestar.com
+    about: >-
+      Problems creating an account or a credential, or a vehicle missing from
+      the portal, are Polestar's to solve. This integration cannot grant
+      access. The portal is only available for vehicles registered and
+      delivered in the EU or EEA.
+  - name: Home Assistant help
+    url: https://community.home-assistant.io/
+    about: General Home Assistant questions unrelated to this integration.

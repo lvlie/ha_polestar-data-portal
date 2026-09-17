@@ -1,0 +1,32 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-json
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: end-of-file-fixer
+        # The bundled spec is a verbatim copy of Polestar's published file.
+        exclude: ^resources/openapi\.json$
+      - id: trailing-whitespace
+        exclude: ^resources/openapi\.json$
+      - id: detect-private-key
+      - id: mixed-line-ending
+
+  - repo: local
+    hooks:
+      - id: generated-files-are-current
+        name: enums.py and en.json match the OpenAPI spec
+        entry: python3 scripts/check_generated.py
+        language: system
+        pass_filenames: false
+        files: ^(resources/openapi\.json|custom_components/.*|scripts/.*)$

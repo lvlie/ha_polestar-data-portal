@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest an entity, capability or improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The Data Portal API is read-only. Remote actions such as locking the
+        car or starting climatisation are not part of it, so they cannot be
+        added here regardless of demand.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to see?
+    validations:
+      required: true
+
+  - type: input
+    id: endpoint
+    attributes:
+      label: Related API endpoint
+      description: >-
+        If this is about data the portal already publishes, which endpoint or
+        field in resources/openapi.json does it come from?
+      placeholder: "/v1/vehicles/{vin}/telemetry/battery → chargingPowerWatts"

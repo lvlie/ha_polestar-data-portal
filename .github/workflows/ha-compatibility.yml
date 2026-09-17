@@ -1,0 +1,136 @@
+name: Home Assistant compatibility
+
+# Home Assistant ships a new minor release every month and deprecations land
+# in beta and dev first. This runs the full suite against those channels so
+# upstream breakage is found before it reaches users on stable.
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  compatibility:
+    name: pytest (homeassistant ${{ matrix.channel }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [stable, beta, dev]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install test dependencies
+        run: pip install -r requirements_test.txt
+
+      - name: Install the ${{ matrix.channel }} Home Assistant release
+        run: |
+          case "${{ matrix.channel }}" in
+            stable) pip install --upgrade homeassistant ;;
+            beta)   pip install --upgrade --pre homeassistant ;;
+            dev)    pip install --upgrade \
+                      git+https://github.com/home-assistant/core.git@dev ;;
+          esac
+          python -c "from homeassistant.const import __version__ as v; print('Home Assistant', v)"
+
+      - name: Run pytest
+        run: python -m pytest -q
+
+  smoke:
+    name: Home Assistant container (${{ matrix.ha_version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ha_version: [stable, beta, dev]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Start Prism mock of the Polestar OpenAPI spec
+        run: |
+          npx -y @stoplight/prism-cli mock resources/openapi.json \
+            --host 0.0.0.0 --port 4010 --errors > prism.log 2>&1 &
+          sleep 10
+
+      - name: Check the client against the spec with Prism
+        run: |
+          python3 -m pip install --quiet aiohttp
+          python3 scripts/prism_contract_check.py
+          # Prism logs a validation error for any request the spec rejects,
+          # such as a missing x-client-id header or a bad auth scheme.
+          if grep -q "VALIDATOR.*error" prism.log; then
+            echo "Prism rejected a request:"
+            grep -B4 "VALIDATOR.*error" prism.log
+            exit 1
+          fi
+
+      - name: Start Home Assistant against the mock
+        run: python3 scripts/ha_smoke.py --start --ha-version ${{ matrix.ha_version }}
+
+      - name: Verify the integration loaded and produced entities
+        run: python3 scripts/ha_smoke.py --verify
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          docker logs homeassistant 2>&1 | tail -200 || true
+          tail -200 ha_config/home-assistant.log 2>/dev/null || true
+
+  report:
+    name: Open an issue when a channel breaks
+    runs-on: ubuntu-latest
+    needs: [compatibility, smoke]
+    if: failure() && github.event_name == 'schedule'
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const title = 'Scheduled Home Assistant compatibility run failed';
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'compatibility',
+            });
+            const body = [
+              'The monthly Home Assistant compatibility run failed.',
+              '',
+              `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              '',
+              'This usually means an upcoming Home Assistant release removed or',
+              'deprecated something this integration relies on.',
+            ].join('\n');
+
+            if (existing.some((issue) => issue.title === title)) {
+              const issue = existing.find((issue) => issue.title === title);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['compatibility', 'bug'],
+              });
+            }

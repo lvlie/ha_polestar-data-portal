@@ -1,0 +1,27 @@
+name: Validate
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # HACS and hassfest rules change independently of this repository.
+    - cron: "30 5 * * 1"
+
+jobs:
+  hassfest:
+    name: hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    name: HACS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hacs/action@main
+        with:
+          category: integration
