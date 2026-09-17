@@ -48,7 +48,7 @@
 ## What you get
 
 One device per vehicle, with entities for every field the Data Portal
-publishes &mdash; 194 per car, of which 89 are enabled by
+publishes &mdash; 194 per car, of which 70 are enabled by
 default and the rest (per-bulb light warnings, per-category energy
 breakdowns, pending settings) can be switched on from the entity registry
 when you need them.
@@ -74,6 +74,13 @@ car answers without wading through the rest:
 - **Tyre pressures and their warnings** (10 entities). Older models do not
   report tyre pressure at all, and on the models that do the reading drifts
   with tyre temperature throughout a drive.
+- **Values that only exist during an active session**: parking-climatisation
+  temperatures, start reason and start/end times, and the cabin pre-cleaning
+  air quality, particulate matter, error and start reason.
+- **Values that only appear after a completed charge**: consumption and trip
+  figures since the last charge, and total energy consumption.
+- **Battery preconditioning status, parking climate timer settings and the
+  sunroof**, none of which every model reports.
 - **Per-bulb light warnings** (40 entities), covered by one aggregate
   *Exterior light failure* sensor that is on by default.
 - **Per-category energy consumption breakdowns** (24 entities).

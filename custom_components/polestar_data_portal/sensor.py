@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -144,10 +144,19 @@ def _daily_time(*keys: str) -> Callable[[dict[str, Any]], Any]:
 
 
 def _count(*keys: str) -> Callable[[dict[str, Any]], Any]:
-    """Return the length of a list field."""
+    """Return the length of a list field.
+
+    The API leaves the key out entirely when the collection is empty, so an
+    absent list means none rather than unknown. Only a payload we never
+    received at all stays unknown, which the entity's availability covers.
+    """
 
     def value(data: dict[str, Any]) -> int | None:
+        if not data:
+            return None
         raw = nested(data, *keys)
+        if raw is None:
+            return 0
         return len(raw) if isinstance(raw, list) else None
 
     return value
@@ -1091,7 +1100,57 @@ CHARGING_SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
     _updated_at("target_soc_updated_at", DOMAIN_TARGET_SOC, "timestamp"),
 )
 
-ALL_SENSOR_DESCRIPTIONS = SENSOR_DESCRIPTIONS + CHARGING_SENSOR_DESCRIPTIONS
+# Fields that a Polestar 2 of the 2022 model year never populates, verified
+# against a live vehicle. They are either absent from that model's telemetry
+# altogether, or only filled in while a session is actually running -- a
+# climatisation window, a cabin pre-cleaning cycle, a period since the last
+# charge. Left enabled they sit at unknown indefinitely, which is the single
+# biggest source of "why is this empty" for owners, so they are registered but
+# switched off. Newer models do report some of these; enabling one is a click.
+CONDITIONAL_SENSOR_KEYS = frozenset(
+    {
+        # Only present once the car has completed a charge cycle.
+        "average_energy_consumption_since_charge",
+        "average_speed_since_charge",
+        "total_energy_consumption",
+        "total_energy_consumption_since_charge",
+        "trip_meter_since_charge",
+        # Battery preconditioning, not reported by every model.
+        "preconditioning_status",
+        # Only filled in while parking climatisation is actually running.
+        "cabin_temperature",
+        "climatization_ending_at",
+        "climatization_start_reason",
+        "climatization_started_at",
+        "main_climate_status",
+        "requested_cabin_temperature",
+        # Only filled in by a completed, valid cabin pre-cleaning cycle.
+        "cabin_air_quality_index",
+        "cabin_particulate_matter",
+        "pre_cleaning_error",
+        "pre_cleaning_start_reason",
+        # Timer settings block is absent unless the car has stored one.
+        "timer_battery_preconditioning",
+        "timer_requested_cabin_temperature",
+    }
+)
+
+
+def _apply_conditional_defaults(
+    descriptions: tuple[PolestarSensorEntityDescription, ...],
+) -> tuple[PolestarSensorEntityDescription, ...]:
+    """Switch off the entities listed in CONDITIONAL_SENSOR_KEYS."""
+    return tuple(
+        replace(description, entity_registry_enabled_default=False)
+        if description.key in CONDITIONAL_SENSOR_KEYS
+        else description
+        for description in descriptions
+    )
+
+
+ALL_SENSOR_DESCRIPTIONS = _apply_conditional_defaults(
+    SENSOR_DESCRIPTIONS + CHARGING_SENSOR_DESCRIPTIONS
+)
 
 
 async def async_setup_entry(
