@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
@@ -145,7 +145,13 @@ def _non_empty_list(
     """Build a problem sensor backed by an array of error/warning codes."""
 
     def is_on(data: dict[str, Any]) -> bool | None:
+        if not data:
+            return None
         values = nested(data, api_key)
+        if values is None:
+            # The key is omitted when there is nothing to report, so no list
+            # means no errors rather than an unknown state.
+            return False
         if not isinstance(values, list):
             return None
         return bool(_clean_codes(values))
@@ -153,7 +159,7 @@ def _non_empty_list(
     def attributes(data: dict[str, Any]) -> dict[str, Any]:
         values = nested(data, api_key)
         if not isinstance(values, list):
-            return {}
+            return {attribute: []} if data else {}
         return {attribute: _clean_codes(values)}
 
     return PolestarBinarySensorEntityDescription(
@@ -335,24 +341,28 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[PolestarBinarySensorEntityDescription, ...] = 
         api_domain=DOMAIN_HEALTH,
         spec=TYRE_PRESSURE_WARNING,
         keys=("frontLeftTyrePressureWarning",),
+        enabled=False,
     ),
     _problem(
         key="tyre_pressure_warning_front_right",
         api_domain=DOMAIN_HEALTH,
         spec=TYRE_PRESSURE_WARNING,
         keys=("frontRightTyrePressureWarning",),
+        enabled=False,
     ),
     _problem(
         key="tyre_pressure_warning_rear_left",
         api_domain=DOMAIN_HEALTH,
         spec=TYRE_PRESSURE_WARNING,
         keys=("rearLeftTyrePressureWarning",),
+        enabled=False,
     ),
     _problem(
         key="tyre_pressure_warning_rear_right",
         api_domain=DOMAIN_HEALTH,
         spec=TYRE_PRESSURE_WARNING,
         keys=("rearRightTyrePressureWarning",),
+        enabled=False,
     ),
     # --- health: lights ----------------------------------------------------
     PolestarBinarySensorEntityDescription(
@@ -412,6 +422,18 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[PolestarBinarySensorEntityDescription, ...] = 
         api_domain=DOMAIN_IS_AT_CHARGE_LOCATION,
         is_on_fn=lambda data: bool(nested(data, "locationId")),
     ),
+)
+
+
+# Body openings not every car has. A vehicle without a sunroof simply omits
+# the field, which would leave the sensor at unknown forever.
+CONDITIONAL_BINARY_SENSOR_KEYS = frozenset({"sunroof"})
+
+BINARY_SENSOR_DESCRIPTIONS = tuple(
+    replace(description, entity_registry_enabled_default=False)
+    if description.key in CONDITIONAL_BINARY_SENSOR_KEYS
+    else description
+    for description in BINARY_SENSOR_DESCRIPTIONS
 )
 
 

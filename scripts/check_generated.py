@@ -24,6 +24,7 @@ GENERATED = {
 def main() -> int:
     """Regenerate each file and report any that changed."""
     stale: list[str] = []
+    skipped: list[str] = []
 
     for generator, target in GENERATED.items():
         path = REPO / target
@@ -37,11 +38,25 @@ def main() -> int:
             check=False,
         )
         if result.returncode != 0:
+            if "No module named 'homeassistant'" in result.stderr:
+                # Generating the translations needs the entity descriptions,
+                # which import Home Assistant. Rather than make pre-commit
+                # unusable without the test dependencies installed, skip it
+                # here and let CI, which installs them, be the real gate.
+                skipped.append(target)
+                continue
             print(f"{generator} failed:\n{result.stderr}", file=sys.stderr)
             return result.returncode
 
         if before is not None and path.read_text() != before:
             stale.append(f"  {target}  (run: python3 {generator})")
+
+    if skipped:
+        print(
+            "Skipped (Home Assistant not importable; CI checks these):\n  "
+            + "\n  ".join(skipped),
+            file=sys.stderr,
+        )
 
     if stale:
         print("Generated files are out of date:", file=sys.stderr)

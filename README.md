@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="resources/logo.svg" alt="Polestar Data Portal" width="280">
+  <img src="custom_components/polestar_data_portal/brand/icon.png" alt="Polestar" width="120">
 </p>
 
 <h1 align="center">Polestar Data Portal for Home Assistant</h1>
@@ -48,7 +48,7 @@
 ## What you get
 
 One device per vehicle, with entities for every field the Data Portal
-publishes &mdash; around 190 per car, of which roughly 95 are enabled by
+publishes &mdash; 194 per car, of which 70 are enabled by
 default and the rest (per-bulb light warnings, per-category energy
 breakdowns, pending settings) can be switched on from the entity registry
 when you need them.
@@ -59,10 +59,38 @@ when you need them.
 | **Odometer & trips** | Odometer, three trip meters, average speeds, average and total energy consumption |
 | **Location** | `device_tracker` with GPS position, plus speed, heading and altitude |
 | **Doors & security** | Four doors, four windows, sunroof, hood, tailgate, charge port, central lock, tailgate lock, alarm |
-| **Health** | Four tyre pressures and their warnings, brake fluid, coolant, oil, washer fluid, 12V battery, service interval, 40 individual exterior lights plus one aggregate failure sensor |
+| **Health** | Brake fluid, coolant, oil, washer fluid, 12V battery, service interval, 40 individual exterior lights plus one aggregate failure sensor, and four tyre pressures with their warnings |
 | **Climate** | Parking climatization state, cabin temperature, ventilation, seat and steering wheel heating, climate timers |
 | **Cabin air** | Pre-cleaning state, air quality index, PM2.5 |
 | **Availability** | Availability status, usage mode, per-domain data freshness timestamps |
+
+### Entities that start disabled
+
+Not every model reports every field, and the ones it does not report would
+otherwise sit at *unknown* forever. Anything narrow, noisy or model-dependent
+is therefore registered but switched off, so you can turn on exactly what your
+car answers without wading through the rest:
+
+- **Tyre pressures and their warnings** (10 entities). Older models do not
+  report tyre pressure at all, and on the models that do the reading drifts
+  with tyre temperature throughout a drive.
+- **Values that only exist during an active session**: parking-climatisation
+  temperatures, start reason and start/end times, and the cabin pre-cleaning
+  air quality, particulate matter, error and start reason.
+- **Values that only appear after a completed charge**: consumption and trip
+  figures since the last charge, and total energy consumption.
+- **Battery preconditioning status, parking climate timer settings and the
+  sunroof**, none of which every model reports.
+- **Per-bulb light warnings** (40 entities), covered by one aggregate
+  *Exterior light failure* sensor that is on by default.
+- **Per-category energy consumption breakdowns** (24 entities).
+- **Pending values and deprecated fields**, which mirror a setting the car has
+  not confirmed yet or a field Polestar has superseded.
+
+To switch one on: **Settings → Devices & services → Polestar Data Portal →
+entities**, filter by *Disabled*, pick the entity and enable it. Nothing is
+lost by leaving them off, and enabling one takes effect after the integration
+reloads.
 
 Entities are typed the way Home Assistant expects: doors and windows are
 `binary_sensor`s with door/window device classes, warnings are `problem`
@@ -113,8 +141,8 @@ Copy `custom_components/polestar_data_portal` into your Home Assistant
 | Setup field | Where it comes from |
 | --- | --- |
 | **App client ID** | The *App client ID* on the credential page |
-| **Client secret** | Shown **once**, when the credential is created |
 | **Expected x-client-id header** | The *Expected x-client-id header* value &mdash; this is your account ID and is **not** the same as the App client ID |
+| **Client secret** | Shown **once**, when the credential is created |
 | **M2M token endpoint** | The *M2M Token Endpoint* on the credential page |
 
 There is a fifth, optional field, *Delegated account e-mail*. Leave it empty
@@ -255,10 +283,16 @@ Generated files, all rebuilt by their scripts rather than edited by hand:
 | --- | --- |
 | `custom_components/polestar_data_portal/enums.py` | `scripts/generate_enums.py` |
 | `custom_components/polestar_data_portal/translations/en.json` | `scripts/generate_translations.py` |
-| `custom_components/polestar_data_portal/brand/*.png` | `scripts/generate_brand_assets.py` |
 
-`scripts/check_generated.py` fails the build if the first two drift from their
-sources; pre-commit runs it for you.
+`scripts/check_generated.py` fails the build if either drifts from its source;
+pre-commit runs it for you.
+
+The brand assets in `custom_components/polestar_data_portal/brand/` are not
+generated. They are copied from
+[home-assistant/brands](https://github.com/home-assistant/brands/tree/master/custom_integrations/polestar_api),
+which is where Home Assistant keeps integration iconography. That directory
+holds `icon.png` and `icon@2x.png` only; there is no separate logo, and HACS
+requires just the icon.
 
 ## Disclaimer
 
@@ -285,9 +319,12 @@ You agree to hold the maintainers harmless from any claim arising out of your
 use of this integration or your use of the Polestar Data Portal through it.
 
 **Polestar** is a trademark of Polestar Performance AB. This project is not
-affiliated with, authorised by, or connected to Polestar in any way. The logo
-in this README is original artwork made for this project and is not Polestar's
-trademark artwork.
+affiliated with, authorised by, or connected to Polestar in any way. The icon
+shipped in `custom_components/polestar_data_portal/brand/` and shown at the top
+of this README is Polestar's mark, taken from the
+[Home Assistant brands repository](https://github.com/home-assistant/brands/tree/master/custom_integrations/polestar_api).
+It is used only to identify which vehicle this integration talks to, and its
+use here implies no endorsement by Polestar.
 
 ## Credits
 

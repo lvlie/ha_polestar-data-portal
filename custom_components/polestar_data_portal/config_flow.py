@@ -53,13 +53,15 @@ def _credentials_schema(defaults: Mapping[str, Any] | None = None) -> vol.Schema
             vol.Required(
                 CONF_CLIENT_ID, default=defaults.get(CONF_CLIENT_ID, vol.UNDEFINED)
             ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
-            vol.Required(CONF_CLIENT_SECRET): TextSelector(
-                TextSelectorConfig(type=TextSelectorType.PASSWORD)
-            ),
+            # Field order deliberately follows the Data Portal credential
+            # page, so the values can be copied straight down the form.
             vol.Required(
                 CONF_ACCOUNT_ID,
                 default=defaults.get(CONF_ACCOUNT_ID, vol.UNDEFINED),
             ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
+            vol.Required(CONF_CLIENT_SECRET): TextSelector(
+                TextSelectorConfig(type=TextSelectorType.PASSWORD)
+            ),
             vol.Required(
                 CONF_TOKEN_URL,
                 default=defaults.get(CONF_TOKEN_URL, DEFAULT_TOKEN_URL),

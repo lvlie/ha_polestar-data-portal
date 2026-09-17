@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -87,34 +86,16 @@ def main() -> int:
         constant = name_for(values, path)
         prefix = common_prefix(list(values))
         lines.append(f"{constant} = EnumSpec(")
-        lines.append(f"    prefix={prefix!r},")
+        lines.append(f"    prefix={json.dumps(prefix)},")
         lines.append("    values=(")
-        lines.extend(f"        {value!r}," for value in values)
+        lines.extend(f"        {json.dumps(value)}," for value in values)
         lines.append("    ),")
         lines.append(")")
         lines.append("")
 
     TARGET.write_text("\n".join(lines))
-    _format(TARGET)
     print(f"Wrote {len(found)} enums to {TARGET.relative_to(REPO)}")
     return 0
-
-
-def _format(path: Path) -> None:
-    """Run ruff format so the generated file matches the repository style.
-
-    Without this the file the generator writes and the file pre-commit leaves
-    behind differ, and the drift check would fail on every run.
-    """
-    import contextlib
-    import subprocess
-
-    with contextlib.suppress(OSError):
-        subprocess.run(
-            [sys.executable, "-m", "ruff", "format", "--quiet", str(path)],
-            check=False,
-            capture_output=True,
-        )
 
 
 if __name__ == "__main__":

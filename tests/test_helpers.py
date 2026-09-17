@@ -117,7 +117,10 @@ def test_bad_iso_values_are_none(value: Any) -> None:
         ({"hour": 7, "minute": 5}, "07:05"),
         ({"hour": 0, "minute": 0}, "00:00"),
         ({"hour": 23, "minute": 59}, "23:59"),
-        ({"hour": 7}, None),
+        # The API omits whichever component is zero, so a timer set on the
+        # hour arrives without a minute. Seen on a real vehicle.
+        ({"hour": 7}, "07:00"),
+        ({"minute": 30}, "00:30"),
         ({}, None),
         (None, None),
     ],

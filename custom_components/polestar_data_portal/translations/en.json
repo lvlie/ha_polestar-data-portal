@@ -6,15 +6,15 @@
         "description": "Sign in at {portal_url} and open **Data Portal API → Credential** to create the credentials for this integration. Start from the portal home page rather than a country URL, because the address differs per market. Copy the four values from the credential page below.",
         "data": {
           "client_id": "App client ID",
-          "client_secret": "Client secret",
           "account_id": "Expected x-client-id header",
+          "client_secret": "Client secret",
           "token_url": "M2M token endpoint",
           "delegated_account_id": "Delegated account e-mail (optional)"
         },
         "data_description": {
           "client_id": "The App client ID shown on the credential page.",
-          "client_secret": "The client secret shown once when the credential is created. Create a new credential if you no longer have it.",
           "account_id": "The 'Expected x-client-id header' value from the credential page. This is your account ID and is not the same as the App client ID.",
+          "client_secret": "The client secret shown once when the credential is created. Create a new credential if you no longer have it.",
           "token_url": "The 'M2M Token Endpoint' shown on the credential page.",
           "delegated_account_id": "Only for third-party credentials: the account e-mail whose shared vehicles you want to read. Leave empty to use your own vehicles."
         }
@@ -24,15 +24,15 @@
         "description": "The stored credentials were rejected. Data Portal credentials can expire or be revoked; sign in at {portal_url}, open **Data Portal API → Credential** and create a new credential, then enter it below.",
         "data": {
           "client_id": "App client ID",
-          "client_secret": "Client secret",
           "account_id": "Expected x-client-id header",
+          "client_secret": "Client secret",
           "token_url": "M2M token endpoint",
           "delegated_account_id": "Delegated account e-mail (optional)"
         },
         "data_description": {
           "client_id": "The App client ID shown on the credential page.",
-          "client_secret": "The client secret shown once when the credential is created. Create a new credential if you no longer have it.",
           "account_id": "The 'Expected x-client-id header' value from the credential page. This is your account ID and is not the same as the App client ID.",
+          "client_secret": "The client secret shown once when the credential is created. Create a new credential if you no longer have it.",
           "token_url": "The 'M2M Token Endpoint' shown on the credential page.",
           "delegated_account_id": "Only for third-party credentials: the account e-mail whose shared vehicles you want to read. Leave empty to use your own vehicles."
         }

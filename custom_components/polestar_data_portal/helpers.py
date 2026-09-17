@@ -127,9 +127,27 @@ def timestamp_to_datetime(value: Any) -> datetime | None:
 
 
 def iso_to_datetime(value: Any) -> datetime | None:
-    """Parse an ISO 8601 string such as ``metaReceivedAt`` or ``updatedAt``."""
-    if not isinstance(value, str) or not value:
+    """Parse a timestamp string such as ``metaReceivedAt`` or ``updatedAt``.
+
+    The spec types these as plain strings without a format, and the API uses
+    two of them: ``metaReceivedAt`` is ISO 8601, while the ``updatedAt`` on
+    charging settings is epoch milliseconds in a string, for example
+    ``"1789558748374"``. Both are accepted here.
+    """
+    if not isinstance(value, str) or not (value := value.strip()):
         return None
+
+    if value.lstrip("-").isdigit():
+        epoch = int(value)
+        # Milliseconds since the epoch are ~1e12 today, seconds ~1e9. Anything
+        # at or above this threshold is far past any plausible date in seconds.
+        if abs(epoch) >= 100_000_000_000:
+            epoch /= 1000
+        try:
+            return datetime.fromtimestamp(epoch, tz=UTC)
+        except (OverflowError, OSError, ValueError):
+            return None
+
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
@@ -138,14 +156,19 @@ def iso_to_datetime(value: Any) -> datetime | None:
 
 
 def daily_time_to_string(value: Any) -> str | None:
-    """Format a ``DailyTime`` object as ``HH:MM``."""
+    """Format a ``DailyTime`` object as ``HH:MM``.
+
+    The API leaves out the half of the time that is zero, so a timer set for
+    08:00 arrives as ``{"hour": 8}`` with no ``minute``. A missing component
+    therefore means zero, not unknown; only an object with neither is unusable.
+    """
     if not isinstance(value, Mapping):
         return None
     hour = to_int(value.get("hour"))
     minute = to_int(value.get("minute"))
-    if hour is None or minute is None:
+    if hour is None and minute is None:
         return None
-    return f"{hour:02d}:{minute:02d}"
+    return f"{hour or 0:02d}:{minute or 0:02d}"
 
 
 def build_device_names(vins: Sequence[str]) -> dict[str, str]:

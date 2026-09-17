@@ -7,10 +7,12 @@ from typing import Any
 import pytest
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 from custom_components.polestar_data_portal.const import (
+    DOMAIN,
     DOMAIN_BATTERY,
     DOMAIN_EXTERIOR,
     DOMAIN_HEALTH,
@@ -19,7 +21,7 @@ from custom_components.polestar_data_portal.const import (
 )
 
 from .conftest import ENTITY_PREFIX as PREFIX
-from .conftest import mock_full_account
+from .conftest import VIN, mock_full_account
 
 
 async def setup_with(
@@ -254,9 +256,9 @@ async def test_lock_polarity(
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
-        ("TYRE_PRESSURE_WARNING_NO_WARNING", STATE_OFF),
-        ("TYRE_PRESSURE_WARNING_LOW_PRESSURE", STATE_ON),
-        ("TYRE_PRESSURE_WARNING_VERY_LOW_PRESSURE", STATE_ON),
+        ("BRAKE_FLUID_LEVEL_WARNING_NO_WARNING", STATE_OFF),
+        ("BRAKE_FLUID_LEVEL_WARNING_TOO_LOW", STATE_ON),
+        ("BRAKE_FLUID_LEVEL_WARNING_CRITICALLY_LOW", STATE_ON),
     ],
 )
 async def test_problem_sensors(
@@ -271,14 +273,14 @@ async def test_problem_sensors(
         hass,
         aioclient_mock,
         mock_config_entry,
-        {DOMAIN_HEALTH: {"frontLeftTyrePressureWarning": value}},
+        {DOMAIN_HEALTH: {"brakeFluidLevelWarning": value}},
     )
 
-    state = hass.states.get(f"binary_sensor.{PREFIX}_tyre_pressure_warning_front_left")
+    state = hass.states.get(f"binary_sensor.{PREFIX}_brake_fluid_warning")
     assert state.state == expected
     assert (
         state.attributes["state"]
-        == value.removeprefix("TYRE_PRESSURE_WARNING_").lower()
+        == value.removeprefix("BRAKE_FLUID_LEVEL_WARNING_").lower()
     )
 
 
@@ -337,3 +339,58 @@ async def test_entities_go_unavailable_on_failure(
     await hass.async_block_till_done()
 
     assert hass.states.get(f"sensor.{PREFIX}_battery").state == STATE_UNAVAILABLE
+
+
+async def test_tyre_entities_are_off_by_default(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Tyre pressure is registered but disabled until someone asks for it.
+
+    Older models report no tyre pressure at all, which would leave eight
+    permanently unknown entities, and the models that do report it drift with
+    tyre temperature all day. They stay in the registry so enabling one is a
+    single click.
+    """
+    await setup_with(hass, aioclient_mock, mock_config_entry)
+    entities = er.async_get(hass)
+
+    tyre = [
+        entry
+        for entry in entities.entities.values()
+        if entry.platform == DOMAIN and "tyre" in entry.unique_id
+    ]
+    assert len(tyre) == 10
+
+    for entry in tyre:
+        assert entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+        assert hass.states.get(entry.entity_id) is None
+
+
+async def test_enabling_a_tyre_sensor_gives_a_reading(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Being off by default must not mean broken: enabling one works."""
+    await setup_with(
+        hass,
+        aioclient_mock,
+        mock_config_entry,
+        {DOMAIN_HEALTH: {"frontLeftTyrePressureKpa": 240}},
+    )
+    entities = er.async_get(hass)
+
+    entity_id = entities.async_get_entity_id(
+        "sensor", DOMAIN, f"{VIN}_tyre_pressure_front_left"
+    )
+    assert entity_id is not None
+
+    entities.async_update_entity(entity_id, disabled_by=None)
+    await hass.config_entries.async_reload(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    state = hass.states.get(entity_id)
+    assert float(state.state) == pytest.approx(240)
+    assert state.attributes["unit_of_measurement"] == "kPa"
