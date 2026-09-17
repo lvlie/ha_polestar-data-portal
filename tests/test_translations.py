@@ -89,6 +89,7 @@ def test_all_flow_errors_are_translated(strings: dict) -> None:
     expected = {
         "cannot_connect",
         "invalid_auth",
+        "insecure_token_url",
         "invalid_token_url",
         "no_vehicles",
         "unknown",

@@ -19,15 +19,21 @@ import asyncio
 import logging
 import time
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 import aiohttp
 
 from .const import API_DOMAIN_PATHS, TOKEN_EXPIRY_MARGIN
+from .helpers import mask_vin
 
 _LOGGER = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=30)
+
+# Hosts allowed to serve the token endpoint over plain HTTP, so the spec-driven
+# mock server in the test suite can be reached without weakening the rule for
+# real deployments.
+LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
 
 class PolestarApiError(Exception):
@@ -76,6 +82,7 @@ class PolestarDataPortalApi:
         self._access_token: str | None = None
         self._token_type: str = "Bearer"
         self._token_expires_at: float = 0.0
+        self._token_generation = 0
         self._token_lock = asyncio.Lock()
 
     @staticmethod
@@ -84,10 +91,21 @@ class PolestarDataPortalApi:
 
         Users copy this value out of the Data Portal, where it is shown both
         with and without the trailing path segment depending on the market.
+
+        Plain HTTP is refused: the client secret travels in the request body,
+        so an http:// endpoint would put it on the wire in cleartext. Loopback
+        is exempt so the mock server used by the test suite still works.
         """
         url = token_url.strip().rstrip("/")
         if not url:
             raise ValueError("token_url must not be empty")
+
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https") or not parsed.hostname:
+            raise ValueError(f"token_url is not a usable URL: {url}")
+        if parsed.scheme != "https" and parsed.hostname not in LOOPBACK_HOSTS:
+            raise ValueError("token_url must use https")
+
         if not url.endswith("/token"):
             url = f"{url}/token"
         return url
@@ -99,15 +117,36 @@ class PolestarDataPortalApi:
 
     # --- authentication ----------------------------------------------------
 
-    async def async_get_access_token(self, *, force: bool = False) -> str:
+    async def async_get_access_token(
+        self, *, stale_generation: int | None = None
+    ) -> str:
         """Return a valid access token, fetching a new one when needed."""
+        token, _ = await self._async_token(stale_generation=stale_generation)
+        return token
+
+    async def _async_token(
+        self, *, stale_generation: int | None = None
+    ) -> tuple[str, int]:
+        """Return a valid access token and the refresh it belongs to.
+
+        ``stale_generation`` is the generation of a token that just failed
+        with HTTP 401. It forces a refresh unless another request already
+        refreshed while this one waited for the lock. Generations are counted
+        rather than compared by value because the server may reissue an
+        identical token string. Without this, one poll's worth of parallel
+        requests meeting an expired token would each mint a new token and
+        spend that many requests from the daily budget.
+        """
         async with self._token_lock:
             if (
-                not force
-                and self._access_token is not None
+                self._access_token is not None
+                and (
+                    stale_generation is None
+                    or stale_generation != self._token_generation
+                )
                 and time.monotonic() < self._token_expires_at
             ):
-                return self._access_token
+                return self._access_token, self._token_generation
 
             # The spec marks `scope` optional. It is deliberately omitted so
             # the portal grants whatever the credential is entitled to;
@@ -120,7 +159,10 @@ class PolestarDataPortalApi:
 
             try:
                 async with self._session.post(
-                    self._token_url, json=payload, timeout=REQUEST_TIMEOUT
+                    self._token_url,
+                    json=payload,
+                    timeout=REQUEST_TIMEOUT,
+                    allow_redirects=False,
                 ) as response:
                     body = await self._read_json(response)
 
@@ -160,9 +202,10 @@ class PolestarDataPortalApi:
             self._token_expires_at = time.monotonic() + max(
                 lifetime - TOKEN_EXPIRY_MARGIN, 0.0
             )
+            self._token_generation += 1
 
             _LOGGER.debug("Obtained Data Portal access token (valid %ss)", lifetime)
-            return access_token
+            return access_token, self._token_generation
 
     @staticmethod
     def _oauth_error_message(body: dict[str, Any], status: int) -> str:
@@ -175,9 +218,13 @@ class PolestarDataPortalApi:
 
     # --- requests ----------------------------------------------------------
 
-    async def _async_request(self, path: str) -> dict[str, Any]:
-        """Perform an authenticated GET and return the decoded body."""
-        token = await self.async_get_access_token()
+    async def _async_request(self, path: str, context: str) -> dict[str, Any]:
+        """Perform an authenticated GET and return the decoded body.
+
+        ``context`` names the request in error messages. The path is not used
+        for that because it embeds the VIN, and these messages reach the log.
+        """
+        token, generation = await self._async_token()
 
         for attempt in range(2):
             headers = {
@@ -197,21 +244,27 @@ class PolestarDataPortalApi:
                     # credentials by status alone, so retry once with a fresh
                     # token before giving up and asking the user to re-auth.
                     if response.status == 401 and attempt == 0:
-                        token = await self.async_get_access_token(force=True)
+                        token, generation = await self._async_token(
+                            stale_generation=generation
+                        )
                         continue
 
                     body = await self._read_json(response)
-                    self._raise_for_status(response.status, body, url)
+                    self._raise_for_status(response.status, body, context)
                     return body
             except TimeoutError as err:
-                raise PolestarApiError(f"Timeout calling {path}") from err
+                raise PolestarApiError(f"Timeout reading {context}") from err
             except aiohttp.ClientError as err:
-                raise PolestarApiError(f"Error calling {path}: {err}") from err
+                # The exception text can embed the request URL, which holds
+                # the VIN, so only its type is reported.
+                raise PolestarApiError(
+                    f"Error reading {context}: {type(err).__name__}"
+                ) from err
 
         raise PolestarAuthError("Authentication failed after refreshing the token")
 
     @staticmethod
-    def _raise_for_status(status: int, body: dict[str, Any], url: str) -> None:
+    def _raise_for_status(status: int, body: dict[str, Any], context: str) -> None:
         """Translate an M2mErrorResponse into a typed exception."""
         if status == 200:
             return
@@ -222,12 +275,14 @@ class PolestarDataPortalApi:
         if status == 401:
             raise PolestarAuthError(f"Credentials rejected: {message}")
         if status == 403:
-            raise PolestarForbiddenError(f"Access denied for {url}: {message}")
+            raise PolestarForbiddenError(f"Access denied for {context}: {message}")
         if status == 404:
-            raise PolestarNotFoundError(f"No data available at {url}: {message}")
+            raise PolestarNotFoundError(f"No data available for {context}: {message}")
         if status == 429:
-            raise PolestarRateLimitError(f"Rate limit reached for {url}: {message}")
-        raise PolestarApiError(f"{url} returned HTTP {status}: {message}")
+            raise PolestarRateLimitError(
+                f"Rate limit reached reading {context}: {message}"
+            )
+        raise PolestarApiError(f"Reading {context} returned HTTP {status}: {message}")
 
     @staticmethod
     async def _read_json(response: aiohttp.ClientResponse) -> dict[str, Any]:
@@ -242,7 +297,7 @@ class PolestarDataPortalApi:
 
     async def async_get_vehicles(self) -> list[str]:
         """Return the VINs this credential may access."""
-        body = await self._async_request("/v1/vehicles")
+        body = await self._async_request("/v1/vehicles", "the vehicle list")
         data = body.get("data")
         if not isinstance(data, list):
             return []
@@ -251,6 +306,6 @@ class PolestarDataPortalApi:
     async def async_get_domain(self, domain: str, vin: str) -> dict[str, Any]:
         """Return the ``data`` object for one telemetry or charging domain."""
         path = API_DOMAIN_PATHS[domain].format(vin=quote(vin, safe=""))
-        body = await self._async_request(path)
+        body = await self._async_request(path, f"{domain} for vehicle {mask_vin(vin)}")
         data = body.get("data")
         return data if isinstance(data, dict) else {}

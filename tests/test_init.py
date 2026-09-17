@@ -20,6 +20,7 @@ from custom_components.polestar_data_portal.const import (
 
 from .conftest import (
     BASE_URL,
+    ENTITY_PREFIX,
     TOKEN_URL,
     VIN,
     mock_all_domains,
@@ -63,10 +64,10 @@ async def test_entities_are_created(
     mock_full_account(aioclient_mock)
     await setup_integration(hass, mock_config_entry)
 
-    assert hass.states.get("sensor.polestar_yv1cz0000000000000_battery")
-    assert hass.states.get("sensor.polestar_yv1cz0000000000000_odometer")
-    assert hass.states.get("binary_sensor.polestar_yv1cz0000000000000_front_left_door")
-    assert hass.states.get("device_tracker.polestar_yv1cz0000000000000_location")
+    assert hass.states.get(f"sensor.{ENTITY_PREFIX}_battery")
+    assert hass.states.get(f"sensor.{ENTITY_PREFIX}_odometer")
+    assert hass.states.get(f"binary_sensor.{ENTITY_PREFIX}_front_left_door")
+    assert hass.states.get(f"device_tracker.{ENTITY_PREFIX}_location")
 
 
 async def test_bad_credentials_trigger_reauth(
@@ -115,11 +116,9 @@ async def test_missing_scopes_are_skipped(
     assert DOMAIN_BATTERY in coordinator.supported_domains
 
     # No always-unknown entities are left behind for the denied domains.
-    assert hass.states.get("sensor.polestar_yv1cz0000000000000_odometer") is None
-    assert (
-        hass.states.get("device_tracker.polestar_yv1cz0000000000000_location") is None
-    )
-    assert hass.states.get("sensor.polestar_yv1cz0000000000000_battery")
+    assert hass.states.get(f"sensor.{ENTITY_PREFIX}_odometer") is None
+    assert hass.states.get(f"device_tracker.{ENTITY_PREFIX}_location") is None
+    assert hass.states.get(f"sensor.{ENTITY_PREFIX}_battery")
 
 
 async def test_setup_does_not_double_fetch(

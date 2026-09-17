@@ -16,7 +16,7 @@
   <br>
   <a href="https://github.com/hacs/integration"><img alt="HACS" src="https://img.shields.io/badge/HACS-custom-41BDF5.svg"></a>
   <a href="https://github.com/lvlie/ha_polestar-data-portal/releases"><img alt="Release" src="https://img.shields.io/github/v/release/lvlie/ha_polestar-data-portal?display_name=tag&sort=semver"></a>
-  <a href="https://www.home-assistant.io/"><img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-2024.8%2B-41BDF5.svg"></a>
+  <a href="https://www.home-assistant.io/"><img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-2025.1%2B-41BDF5.svg"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/lvlie/ha_polestar-data-portal"></a>
   <br>
   <a href="https://github.com/lvlie/ha_polestar-data-portal/issues"><img alt="Issues" src="https://img.shields.io/github/issues/lvlie/ha_polestar-data-portal"></a>
@@ -75,7 +75,7 @@ nothing here can lock, unlock, or start your car.
 
 ## Requirements
 
-- Home Assistant 2024.8 or newer
+- Home Assistant 2025.1 or newer
 - A Polestar delivered in the EU or EEA
 - A free Polestar Data Portal account with an API credential
 
@@ -180,6 +180,35 @@ python3 scripts/generate_enums.py
 python3 scripts/generate_translations.py
 python3 -m pytest
 ```
+
+## Privacy and credentials
+
+This integration handles a credential that can read your car's position, so a
+few deliberate choices are worth knowing about:
+
+- **Credentials live in Home Assistant's config entry storage**, the same place
+  every other integration keeps them. That store is not encrypted, so treat
+  your Home Assistant configuration directory as sensitive and keep your
+  backups somewhere safe.
+- **The token endpoint must use `https`.** The client secret travels in the
+  request body, so a plain `http://` endpoint is refused at setup rather than
+  sending the secret in the clear. Redirects are not followed on the token
+  request, so the secret is never replayed to a host chosen by the server.
+- **Nothing secret is logged.** Even with debug logging on, the client ID,
+  client secret, account ID and access token never reach the log. This is
+  enforced by a test that runs a full setup with debug logging enabled and
+  asserts none of them appear.
+- **VINs are masked in logs** as `****1234`. Because the device name decides
+  the entity IDs, and Home Assistant writes entity IDs to logs, traces and the
+  recorder, devices are named after the VIN's serial section
+  (`Polestar 123456`) rather than the whole VIN. The full VIN is still on the
+  device as its serial number and in each entity's unique ID, so nothing is
+  lost and renaming the device is safe.
+- **Diagnostics are redacted.** The downloadable diagnostics strip credentials,
+  VINs, coordinates and charge-location names, so the file can be attached to
+  an issue as-is.
+- **Location data stays local.** The integration only reads from Polestar and
+  writes to Home Assistant; it sends nothing anywhere else.
 
 ## Development
 

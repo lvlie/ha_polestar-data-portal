@@ -189,3 +189,52 @@ async def test_domain_returns_unwrapped_data(
     api = build_api(hass)
 
     assert await api.async_get_domain("odometer", VIN) == {"odometerMeters": 123456}
+
+
+async def test_a_second_request_does_not_refresh_the_token_again(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """Only the first of several 401s mints a new token.
+
+    Each poll fires one request per domain concurrently. They all hold the
+    same token, so when it expires they all get a 401 at once. Only the first
+    to reach the lock should refresh; the rest must pick up the new token
+    instead of minting one each and spending the daily budget on it.
+    """
+    mock_token(aioclient_mock)
+    api = build_api(hass)
+
+    _, generation = await api._async_token()
+    assert aioclient_mock.call_count == 1
+
+    # First request to notice the 401 refreshes.
+    _, refreshed_generation = await api._async_token(stale_generation=generation)
+    assert aioclient_mock.call_count == 2
+    assert refreshed_generation != generation
+
+    # The others were holding the same, now superseded, generation.
+    for _ in range(3):
+        _, current = await api._async_token(stale_generation=generation)
+        assert current == refreshed_generation
+
+    assert aioclient_mock.call_count == 2
+
+
+async def test_identical_replacement_token_still_counts_as_a_refresh(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """Refresh tracking cannot rely on the token string changing.
+
+    The mocked endpoint returns the same token value every time, as a real
+    server may when it reissues before expiry.
+    """
+    mock_token(aioclient_mock)
+    api = build_api(hass)
+
+    first_token, first_generation = await api._async_token()
+    second_token, second_generation = await api._async_token(
+        stale_generation=first_generation
+    )
+
+    assert first_token == second_token
+    assert second_generation != first_generation

@@ -25,6 +25,7 @@ from .const import (
 )
 from .coordinator import PolestarVehicleCoordinator
 from .discovery import DiscoveryCache
+from .helpers import mask_vin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,10 +64,9 @@ def build_api(hass: HomeAssistant, data: dict[str, object]) -> PolestarDataPorta
 async def async_setup_entry(hass: HomeAssistant, entry: PolestarConfigEntry) -> bool:
     """Set up a Polestar Data Portal account from a config entry."""
     api = build_api(hass, dict(entry.data))
-    account_id = str(entry.data[CONF_ACCOUNT_ID])
 
     cache = DiscoveryCache(hass)
-    cached = await cache.async_get(account_id)
+    cached = await cache.async_get(entry.entry_id)
 
     if cached:
         # Reuse the previous discovery so a restart costs one request per
@@ -108,20 +108,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: PolestarConfigEntry) -> 
             # One car without readable telemetry must not block the others,
             # for example a vehicle shared with the account but not covered by
             # the credential's scopes.
-            _LOGGER.warning("Skipping vehicle %s: %s", vin, err)
+            _LOGGER.warning("Skipping vehicle %s: %s", mask_vin(vin), err)
             continue
         coordinators.append(coordinator)
 
     if not coordinators:
         # A stale cache can point at vehicles that are no longer readable.
         # Drop it so the next attempt rediscovers from scratch.
-        await cache.async_invalidate(account_id)
+        await cache.async_invalidate(entry.entry_id)
         raise ConfigEntryNotReady(
             "No vehicle on this account returned any Data Portal telemetry"
         )
 
     await cache.async_set(
-        account_id,
+        entry.entry_id,
         {
             coordinator.vin: sorted(coordinator.supported_domains)
             for coordinator in coordinators
@@ -194,5 +194,5 @@ async def async_reload_entry(hass: HomeAssistant, entry: PolestarConfigEntry) ->
     Changing the options is also the supported way to pick up a newly added
     vehicle or a freshly granted scope, so the discovery cache is dropped here.
     """
-    await DiscoveryCache(hass).async_invalidate(str(entry.data[CONF_ACCOUNT_ID]))
+    await DiscoveryCache(hass).async_invalidate(entry.entry_id)
     await hass.config_entries.async_reload(entry.entry_id)

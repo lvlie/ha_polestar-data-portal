@@ -18,9 +18,8 @@ from custom_components.polestar_data_portal.const import (
     DOMAIN_ODOMETER,
 )
 
-from .conftest import VIN, mock_full_account
-
-PREFIX = f"polestar_{VIN.lower()}"
+from .conftest import ENTITY_PREFIX as PREFIX
+from .conftest import mock_full_account
 
 
 async def setup_with(

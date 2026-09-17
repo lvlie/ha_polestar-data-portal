@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from math import ceil
 from typing import Final
 
 DOMAIN: Final = "polestar_data_portal"
@@ -128,8 +129,6 @@ def recommended_scan_interval_minutes(requests_per_poll: int) -> int:
     costs across every vehicle on the account. The result is never below
     :data:`MIN_SCAN_INTERVAL_MINUTES`.
     """
-    from math import ceil
-
     if requests_per_poll <= 0:
         return DEFAULT_SCAN_INTERVAL_MINUTES
 

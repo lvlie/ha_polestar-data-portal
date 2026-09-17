@@ -140,3 +140,29 @@ def daily_time_to_string(value: Any) -> str | None:
     if hour is None or minute is None:
         return None
     return f"{hour:02d}:{minute:02d}"
+
+
+def short_vin(vin: str) -> str:
+    """Return the trailing serial part of a VIN, for use in a device name.
+
+    The device name decides the entity IDs, and Home Assistant writes entity
+    IDs to the log, to automation traces and to the recorder. Naming a device
+    after the full VIN would therefore spread it across places users copy and
+    share, so only the serial section is used. The full VIN stays on the
+    device as its serial number and in each entity's unique ID.
+    """
+    if not isinstance(vin, str) or not vin:
+        return "unknown"
+    return vin[-6:] if len(vin) > 6 else vin
+
+
+def mask_vin(vin: str) -> str:
+    """Return a VIN safe to write to a log file.
+
+    A VIN identifies a specific car and its owner, and Home Assistant logs
+    routinely get pasted into bug reports, so only the last four characters
+    are kept.
+    """
+    if not isinstance(vin, str) or len(vin) <= 4:
+        return "****"
+    return f"****{vin[-4:]}"

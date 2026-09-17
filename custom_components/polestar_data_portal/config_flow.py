@@ -89,8 +89,9 @@ async def _async_validate(
             token_url=user_input[CONF_TOKEN_URL],
             delegated_account_id=user_input.get(CONF_DELEGATED_ACCOUNT_ID),
         )
-    except ValueError:
-        return [], {CONF_TOKEN_URL: "invalid_token_url"}
+    except ValueError as err:
+        reason = "insecure_token_url" if "https" in str(err) else "invalid_token_url"
+        return [], {CONF_TOKEN_URL: reason}
 
     try:
         vins = await api.async_get_vehicles()

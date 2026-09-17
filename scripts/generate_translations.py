@@ -228,6 +228,11 @@ def build() -> dict:
                     "has not expired."
                 ),
                 "invalid_token_url": "That does not look like a valid token endpoint.",
+                "insecure_token_url": (
+                    "The token endpoint must use https. Your client secret is "
+                    "sent in the request body, so it would otherwise travel "
+                    "over the network unencrypted."
+                ),
                 "no_vehicles": (
                     "The credentials work, but no vehicles are linked to this "
                     "account. Check that the vehicle is registered in the EU or "

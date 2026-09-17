@@ -1,9 +1,12 @@
-"""Persistent cache of the vehicles and API domains found for an account.
+"""Persistent cache of the vehicles and API domains found for a config entry.
 
 Discovering what a credential can read costs one request per documented
 endpoint. Doing that on every Home Assistant restart is what turns a restart
 loop into a rate-limit problem, so the result is cached between runs and only
 re-probed when it is missing, stale, or explicitly invalidated.
+
+Entries are keyed by config entry ID rather than by the Data Portal account
+ID, so no credential-derived identifier is written to disk.
 """
 
 from __future__ import annotations
@@ -27,10 +30,10 @@ class DiscoveryCache:
         """Initialize the cache."""
         self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, STORAGE_KEY)
 
-    async def async_get(self, account_id: str) -> dict[str, list[str]] | None:
-        """Return the cached vehicles for an account, or None when unusable."""
+    async def async_get(self, entry_id: str) -> dict[str, list[str]] | None:
+        """Return the cached vehicles for an entry, or None when unusable."""
         data = await self._store.async_load() or {}
-        entry = data.get(account_id)
+        entry = data.get(entry_id)
         if not isinstance(entry, dict):
             return None
 
@@ -40,7 +43,7 @@ class DiscoveryCache:
             return None
 
         if datetime.now(UTC) - discovered_at > timedelta(days=DISCOVERY_CACHE_TTL_DAYS):
-            _LOGGER.debug("Discovery cache for this account expired; re-probing")
+            _LOGGER.debug("Discovery cache expired; re-probing")
             return None
 
         vehicles = entry.get("vehicles")
@@ -62,8 +65,8 @@ class DiscoveryCache:
         }
         await self._store.async_save(data)
 
-    async def async_invalidate(self, account_id: str) -> None:
+    async def async_invalidate(self, entry_id: str) -> None:
         """Drop the cached discovery so the next setup probes again."""
         data = await self._store.async_load() or {}
-        if data.pop(account_id, None) is not None:
+        if data.pop(entry_id, None) is not None:
             await self._store.async_save(data)

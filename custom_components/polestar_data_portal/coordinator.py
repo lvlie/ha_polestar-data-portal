@@ -22,6 +22,7 @@ from .api import (
     PolestarRateLimitError,
 )
 from .const import API_DOMAIN_PATHS, DOMAIN, MANUFACTURER
+from .helpers import mask_vin, short_vin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ class PolestarVehicleCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]
             hass,
             _LOGGER,
             config_entry=config_entry,
-            name=f"{DOMAIN} {vin}",
+            name=f"{DOMAIN} {mask_vin(vin)}",
             update_interval=update_interval,
         )
         self.api = api
@@ -75,7 +76,7 @@ class PolestarVehicleCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]
         return DeviceInfo(
             identifiers={(DOMAIN, self.vin)},
             manufacturer=MANUFACTURER,
-            name=f"Polestar {self.vin}",
+            name=f"Polestar {short_vin(self.vin)}",
             serial_number=self.vin,
         )
 
@@ -93,14 +94,15 @@ class PolestarVehicleCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]
 
         if not self.supported_domains:
             raise UpdateFailed(
-                f"No Data Portal domain returned data for {self.vin}. Check that "
-                "the credential has telemetry scopes granted in the Data Portal."
+                f"No Data Portal domain returned data for vehicle "
+                f"{mask_vin(self.vin)}. Check that the credential has telemetry "
+                "scopes granted in the Data Portal."
             )
 
         skipped = sorted(candidates - self.supported_domains)
         _LOGGER.debug(
             "Vehicle %s supports %s; no data for %s",
-            self.vin,
+            mask_vin(self.vin),
             sorted(self.supported_domains),
             skipped or "none",
         )
@@ -157,18 +159,27 @@ class PolestarVehicleCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]
                     _LOGGER.debug(
                         "Domain %s is not accessible for %s (missing scope)",
                         domain,
-                        self.vin,
+                        mask_vin(self.vin),
                     )
                     self.supported_domains.discard(domain)
                     return domain, None
                 except PolestarNotFoundError:
-                    _LOGGER.debug("Domain %s reported no data for %s", domain, self.vin)
+                    _LOGGER.debug(
+                        "Domain %s reported no data for %s",
+                        domain,
+                        mask_vin(self.vin),
+                    )
                     return domain, {}
                 except PolestarRateLimitError as err:
                     _LOGGER.warning("Polestar Data Portal rate limit hit: %s", err)
                     return domain, None
                 except PolestarApiError as err:
-                    _LOGGER.debug("Domain %s failed for %s: %s", domain, self.vin, err)
+                    _LOGGER.debug(
+                        "Domain %s failed for %s: %s",
+                        domain,
+                        mask_vin(self.vin),
+                        err,
+                    )
                     return domain, None
 
         if not domains:

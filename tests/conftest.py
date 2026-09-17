@@ -23,7 +23,10 @@ from .openapi import response_for, telemetry_payload
 BASE_URL = "https://pc-api.polestar.com/eu-north-1/data-portal/m2m"
 TOKEN_URL = f"{BASE_URL}/token"
 
-VIN = "YV1CZ0000000000000"
+VIN = "YV1CZ0000000123456"
+
+# Entity IDs derive from the device name, which uses only the VIN serial part.
+ENTITY_PREFIX = "polestar_123456"
 ACCOUNT_ID = "cf50b789-4e95-4636-977d-4ffb10164d11"
 
 CONFIG_DATA = {
