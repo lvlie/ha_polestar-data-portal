@@ -48,7 +48,7 @@
 ## What you get
 
 One device per vehicle, with entities for every field the Data Portal
-publishes &mdash; around 190 per car, of which roughly 95 are enabled by
+publishes &mdash; 194 per car, of which 89 are enabled by
 default and the rest (per-bulb light warnings, per-category energy
 breakdowns, pending settings) can be switched on from the entity registry
 when you need them.
@@ -59,10 +59,31 @@ when you need them.
 | **Odometer & trips** | Odometer, three trip meters, average speeds, average and total energy consumption |
 | **Location** | `device_tracker` with GPS position, plus speed, heading and altitude |
 | **Doors & security** | Four doors, four windows, sunroof, hood, tailgate, charge port, central lock, tailgate lock, alarm |
-| **Health** | Four tyre pressures and their warnings, brake fluid, coolant, oil, washer fluid, 12V battery, service interval, 40 individual exterior lights plus one aggregate failure sensor |
+| **Health** | Brake fluid, coolant, oil, washer fluid, 12V battery, service interval, 40 individual exterior lights plus one aggregate failure sensor, and four tyre pressures with their warnings |
 | **Climate** | Parking climatization state, cabin temperature, ventilation, seat and steering wheel heating, climate timers |
 | **Cabin air** | Pre-cleaning state, air quality index, PM2.5 |
 | **Availability** | Availability status, usage mode, per-domain data freshness timestamps |
+
+### Entities that start disabled
+
+Not every model reports every field, and the ones it does not report would
+otherwise sit at *unknown* forever. Anything narrow, noisy or model-dependent
+is therefore registered but switched off, so you can turn on exactly what your
+car answers without wading through the rest:
+
+- **Tyre pressures and their warnings** (10 entities). Older models do not
+  report tyre pressure at all, and on the models that do the reading drifts
+  with tyre temperature throughout a drive.
+- **Per-bulb light warnings** (40 entities), covered by one aggregate
+  *Exterior light failure* sensor that is on by default.
+- **Per-category energy consumption breakdowns** (24 entities).
+- **Pending values and deprecated fields**, which mirror a setting the car has
+  not confirmed yet or a field Polestar has superseded.
+
+To switch one on: **Settings → Devices & services → Polestar Data Portal →
+entities**, filter by *Disabled*, pick the entity and enable it. Nothing is
+lost by leaving them off, and enabling one takes effect after the integration
+reloads.
 
 Entities are typed the way Home Assistant expects: doors and windows are
 `binary_sensor`s with door/window device classes, warnings are `problem`

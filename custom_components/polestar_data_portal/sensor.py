@@ -316,7 +316,10 @@ def _timer_seat_heating() -> tuple[PolestarSensorEntityDescription, ...]:
 
 
 def _tyre_pressures() -> tuple[PolestarSensorEntityDescription, ...]:
-    """Build the four measured tyre pressure sensors plus the references."""
+    """Build the tyre pressure sensors and the recommended reference values.
+
+    All of these are off by default; see the comment on the corner sensors.
+    """
     corners = (
         ("front_left", "frontLeftTyrePressureKpa"),
         ("front_right", "frontRightTyrePressureKpa"),
@@ -331,6 +334,10 @@ def _tyre_pressures() -> tuple[PolestarSensorEntityDescription, ...]:
             device_class=SensorDeviceClass.PRESSURE,
             native_unit_of_measurement=UnitOfPressure.KPA,
             state_class=SensorStateClass.MEASUREMENT,
+            # Older models do not report tyre pressure at all, which would
+            # leave four permanently unknown entities, and the models that do
+            # report it drift with tyre temperature throughout a drive.
+            entity_registry_enabled_default=False,
             value_fn=_number(api_key),
         )
         for name, api_key in corners

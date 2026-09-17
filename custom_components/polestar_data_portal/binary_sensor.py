@@ -335,24 +335,28 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[PolestarBinarySensorEntityDescription, ...] = 
         api_domain=DOMAIN_HEALTH,
         spec=TYRE_PRESSURE_WARNING,
         keys=("frontLeftTyrePressureWarning",),
+        enabled=False,
     ),
     _problem(
         key="tyre_pressure_warning_front_right",
         api_domain=DOMAIN_HEALTH,
         spec=TYRE_PRESSURE_WARNING,
         keys=("frontRightTyrePressureWarning",),
+        enabled=False,
     ),
     _problem(
         key="tyre_pressure_warning_rear_left",
         api_domain=DOMAIN_HEALTH,
         spec=TYRE_PRESSURE_WARNING,
         keys=("rearLeftTyrePressureWarning",),
+        enabled=False,
     ),
     _problem(
         key="tyre_pressure_warning_rear_right",
         api_domain=DOMAIN_HEALTH,
         spec=TYRE_PRESSURE_WARNING,
         keys=("rearRightTyrePressureWarning",),
+        enabled=False,
     ),
     # --- health: lights ----------------------------------------------------
     PolestarBinarySensorEntityDescription(
