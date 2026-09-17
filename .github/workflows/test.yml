@@ -1,0 +1,100 @@
+name: Tests
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements_test.txt
+
+      - name: Ruff
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Generated files match the OpenAPI spec
+        run: python3 scripts/check_generated.py
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements_test.txt
+
+      - name: Run pytest
+        run: python -m pytest -q
+
+  smoke:
+    name: Home Assistant smoke test (${{ matrix.ha_version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ha_version: [stable]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Start Prism mock of the Polestar OpenAPI spec
+        run: |
+          npx -y @stoplight/prism-cli mock resources/openapi.json \
+            --host 0.0.0.0 --port 4010 --errors > prism.log 2>&1 &
+          for _ in $(seq 1 30); do
+            if curl -sf -X POST http://127.0.0.1:4010/token \
+                 -H 'Content-Type: application/json' \
+                 -d '{"clientId":"x","clientSecret":"y"}' > /dev/null; then
+              echo "Prism is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Prism did not start"; cat prism.log; exit 1
+
+      - name: Start Home Assistant against the mock
+        run: python3 scripts/ha_smoke.py --start --ha-version ${{ matrix.ha_version }}
+
+      - name: Verify the integration loaded and produced entities
+        run: python3 scripts/ha_smoke.py --verify
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          echo "----- prism -----"
+          cat prism.log || true
+          echo "----- home assistant (docker) -----"
+          docker logs homeassistant 2>&1 | tail -200 || true
+          echo "----- home-assistant.log -----"
+          tail -200 ha_config/home-assistant.log 2>/dev/null || echo "(no log file)"

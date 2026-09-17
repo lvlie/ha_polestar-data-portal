@@ -1,0 +1,15 @@
+{
+  "domain": "polestar_data_portal",
+  "name": "Polestar Data Portal",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/lvlie/ha_polestar-data-portal",
+  "issue_tracker": "https://github.com/lvlie/ha_polestar-data-portal/issues",
+  "codeowners": ["@lvlie"],
+  "dependencies": [],
+  "requirements": [],
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "quality_scale": "bronze",
+  "loggers": ["custom_components.polestar_data_portal"]
+}

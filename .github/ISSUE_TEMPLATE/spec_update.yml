@@ -1,0 +1,33 @@
+name: API spec change
+description: Polestar changed the Data Portal API
+labels: ["api-change"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The bundled `resources/openapi.json` is the contract this integration
+        is generated and tested against. If Polestar changes it, that file
+        needs updating and the generators need re-running.
+
+  - type: textarea
+    id: change
+    attributes:
+      label: What changed?
+      description: New endpoint, new enum value, renamed field, removed field...
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: >-
+        A diff against the bundled spec, or the relevant part of the spec as
+        published on the portal today.
+      render: json
+
+  - type: textarea
+    id: symptoms
+    attributes:
+      label: What breaks because of it?
+      description: Unknown sensors, errors in the log, missing entities...

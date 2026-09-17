@@ -1,0 +1,7 @@
+# Pinned loosely so the scheduled compatibility run picks up new releases.
+homeassistant>=2024.8
+pytest-homeassistant-custom-component
+pytest
+pytest-asyncio
+pre-commit
+ruff
