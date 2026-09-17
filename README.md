@@ -249,6 +249,17 @@ python3 -m venv .venv
 `scripts/ha_smoke.py` drives a live Home Assistant container against a Prism
 mock of the spec; `.github/workflows/test.yml` shows how it is wired up.
 
+Generated files, all rebuilt by their scripts rather than edited by hand:
+
+| File | Script |
+| --- | --- |
+| `custom_components/polestar_data_portal/enums.py` | `scripts/generate_enums.py` |
+| `custom_components/polestar_data_portal/translations/en.json` | `scripts/generate_translations.py` |
+| `custom_components/polestar_data_portal/brand/*.png` | `scripts/generate_brand_assets.py` |
+
+`scripts/check_generated.py` fails the build if the first two drift from their
+sources; pre-commit runs it for you.
+
 ## Disclaimer
 
 This project is provided **as is, without warranty of any kind**, express or
