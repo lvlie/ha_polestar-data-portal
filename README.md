@@ -113,8 +113,8 @@ Copy `custom_components/polestar_data_portal` into your Home Assistant
 | Setup field | Where it comes from |
 | --- | --- |
 | **App client ID** | The *App client ID* on the credential page |
-| **Client secret** | Shown **once**, when the credential is created |
 | **Expected x-client-id header** | The *Expected x-client-id header* value &mdash; this is your account ID and is **not** the same as the App client ID |
+| **Client secret** | Shown **once**, when the credential is created |
 | **M2M token endpoint** | The *M2M Token Endpoint* on the credential page |
 
 There is a fifth, optional field, *Delegated account e-mail*. Leave it empty

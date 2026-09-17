@@ -165,22 +165,23 @@ def build() -> dict:
         device_tracker.TRACKER_DESCRIPTION.translation_key: {"name": "Location"}
     }
 
+    # Ordered as the Data Portal credential page presents them.
     credential_fields = {
         "client_id": "App client ID",
-        "client_secret": "Client secret",
         "account_id": "Expected x-client-id header",
+        "client_secret": "Client secret",
         "token_url": "M2M token endpoint",
         "delegated_account_id": "Delegated account e-mail (optional)",
     }
     credential_descriptions = {
         "client_id": "The App client ID shown on the credential page.",
-        "client_secret": (
-            "The client secret shown once when the credential is created. "
-            "Create a new credential if you no longer have it."
-        ),
         "account_id": (
             "The 'Expected x-client-id header' value from the credential page. "
             "This is your account ID and is not the same as the App client ID."
+        ),
+        "client_secret": (
+            "The client secret shown once when the credential is created. "
+            "Create a new credential if you no longer have it."
         ),
         "token_url": "The 'M2M Token Endpoint' shown on the credential page.",
         "delegated_account_id": (

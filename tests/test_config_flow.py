@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 from homeassistant.config_entries import SOURCE_USER
-from homeassistant.const import CONF_CLIENT_SECRET
+from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -14,6 +14,7 @@ from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClien
 
 from custom_components.polestar_data_portal.const import (
     CONF_ACCOUNT_ID,
+    CONF_DELEGATED_ACCOUNT_ID,
     CONF_SCAN_INTERVAL_MINUTES,
     CONF_TOKEN_URL,
     DOMAIN,
@@ -241,3 +242,43 @@ async def test_options_flow_sets_interval(
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert mock_config_entry.options == {CONF_SCAN_INTERVAL_MINUTES: 30}
+
+
+async def test_form_field_order_matches_the_portal(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """The form lists credentials in the order the Data Portal shows them.
+
+    Users copy these four values straight down the credential page, so the
+    order is part of the interface, not an accident of the schema.
+    """
+    result = await start_flow(hass)
+    fields = [key.schema for key in result["data_schema"].schema]
+
+    assert fields == [
+        CONF_CLIENT_ID,
+        CONF_ACCOUNT_ID,
+        CONF_CLIENT_SECRET,
+        CONF_TOKEN_URL,
+        CONF_DELEGATED_ACCOUNT_ID,
+    ]
+
+
+async def test_reauth_form_uses_the_same_order(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Re-authentication shows the same layout as first-time setup."""
+    mock_config_entry.add_to_hass(hass)
+
+    result = await mock_config_entry.start_reauth_flow(hass)
+    fields = [key.schema for key in result["data_schema"].schema]
+
+    assert fields == [
+        CONF_CLIENT_ID,
+        CONF_ACCOUNT_ID,
+        CONF_CLIENT_SECRET,
+        CONF_TOKEN_URL,
+        CONF_DELEGATED_ACCOUNT_ID,
+    ]
