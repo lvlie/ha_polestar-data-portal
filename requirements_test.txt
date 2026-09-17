@@ -1,5 +1,5 @@
 # Pinned loosely so the scheduled compatibility run picks up new releases.
-homeassistant>=2025.1
+homeassistant>=2026.9.2
 pytest-homeassistant-custom-component
 pytest
 pytest-asyncio
