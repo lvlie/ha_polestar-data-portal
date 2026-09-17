@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from homeassistant.components.device_tracker import SourceType, TrackerEntity
+from homeassistant.components.device_tracker import TrackerEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -35,16 +35,15 @@ async def async_setup_entry(
 
 
 class PolestarDeviceTracker(PolestarEntity, TrackerEntity):
-    """Report the vehicle's last known GPS position."""
+    """Report the vehicle's last known GPS position.
+
+    ``TrackerEntity`` already declares GPS as its source type, so only
+    the coordinates are supplied here.
+    """
 
     def __init__(self, coordinator: PolestarVehicleCoordinator) -> None:
         """Initialize the device tracker."""
         super().__init__(coordinator, TRACKER_DESCRIPTION, DOMAIN_LOCATION)
-
-    @property
-    def source_type(self) -> SourceType:
-        """Return that this tracker is GPS based."""
-        return SourceType.GPS
 
     @property
     def latitude(self) -> float | None:

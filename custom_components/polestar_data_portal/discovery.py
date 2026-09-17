@@ -56,10 +56,10 @@ class DiscoveryCache:
             if isinstance(domains, list) and domains
         }
 
-    async def async_set(self, account_id: str, vehicles: dict[str, list[str]]) -> None:
-        """Replace the cached discovery for one account."""
+    async def async_set(self, entry_id: str, vehicles: dict[str, list[str]]) -> None:
+        """Replace the cached discovery for one config entry."""
         data = await self._store.async_load() or {}
-        data[account_id] = {
+        data[entry_id] = {
             "discovered_at": datetime.now(UTC).isoformat(),
             "vehicles": {vin: sorted(domains) for vin, domains in vehicles.items()},
         }

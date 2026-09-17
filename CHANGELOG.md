@@ -5,6 +5,61 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-09-17
+
+A review pass over the integration from four angles — an installing user, a
+security adviser, a test engineer and a Home Assistant maintainer — plus a
+shorter README.
+
+### Security
+
+- **Data requests no longer follow redirects.** Every vehicle request carries
+  the bearer token in an `Authorization` header, and aiohttp follows redirects
+  by default, so a `302` from the API host would have replayed that token to
+  whatever host the response named. Redirects are now refused and reported;
+  the token request already refused them.
+- **The VIN no longer reaches the log when a poll fails completely.** Every
+  other path masks it, but the message raised when no domain answers embedded
+  the full VIN, and Home Assistant logs that message verbatim.
+
+### Fixed
+
+- **Re-authenticating with another account's credentials is refused.** It
+  previously rebound the entry silently, leaving its devices and history
+  pointing at vehicles the new credential cannot read.
+- **Clearing the optional delegated account during re-authentication now
+  sticks.** The form shows every stored value, but an emptied field was merged
+  away instead of applied.
+- **A blank required field reports a form error** instead of failing the flow
+  with an unhandled error. The frontend blocks this; the websocket API does
+  not.
+- **Deleting the integration removes its discovery cache.** The cached vehicle
+  and scope list stayed in Home Assistant's storage after the entry was gone.
+
+### Changed
+
+- A duplicate account is rejected before its credentials are validated, so
+  adding one twice costs nothing from the daily request allowance.
+- The README is about a fifth shorter: the per-entity list of what starts
+  disabled moved into a collapsible section, and the duplicated explanations
+  of VIN handling were merged.
+
+### Added
+
+- Tests for each of the above, each verified to fail against the previous
+  behaviour: that both the token and data requests set `allow_redirects=False`
+  and that a `3xx` is reported rather than parsed, that a totally failed poll
+  masks the VIN, that re-auth across accounts aborts, that the delegated
+  account can be cleared, and that removing the entry clears its cache.
+- `test_token_request_does_not_follow_redirects` now asserts the redirect
+  setting it is named for. It previously only re-checked that the token URL
+  was `https`.
+
+### Removed
+
+- The unused `short_vin` helper and its test, the unused `base_url` property,
+  and two unused enum constants.
+
 ## [0.1.1] - 2026-09-17
 
 Follow-up to 0.1.0, from re-checking the integration against the same car once
@@ -112,6 +167,7 @@ Initial release.
 - Diagnostics that redact credentials, VINs, coordinates and charge-location
   names.
 
+[0.2.0]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.2.0
 [0.1.1]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.1.1
 [0.1.0]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.1.0
 [0.0.1]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.0.1

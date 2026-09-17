@@ -242,6 +242,11 @@ def build() -> dict:
                 "unknown": "Unexpected error.",
             },
             "abort": {
+                "account_mismatch": (
+                    "Those credentials belong to a different Data Portal "
+                    "account. Re-authenticate with a credential from the same "
+                    "account, or add the other account as a new integration."
+                ),
                 "already_configured": "This Data Portal account is already set up.",
                 "reauth_successful": "Credentials updated.",
             },

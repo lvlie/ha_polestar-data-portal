@@ -136,7 +136,9 @@ class PolestarVehicleCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]
                 merged[domain] = previous[domain]
 
         if not results:
-            raise UpdateFailed(f"No Data Portal domain could be read for {self.vin}")
+            raise UpdateFailed(
+                f"No Data Portal domain could be read for {mask_vin(self.vin)}"
+            )
 
         return merged
 

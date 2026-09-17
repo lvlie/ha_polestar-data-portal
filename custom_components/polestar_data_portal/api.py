@@ -113,11 +113,6 @@ class PolestarDataPortalApi:
             url = f"{url}/token"
         return url
 
-    @property
-    def base_url(self) -> str:
-        """Return the API base URL derived from the token endpoint."""
-        return self._base_url
-
     # --- authentication ----------------------------------------------------
 
     async def async_get_access_token(
@@ -277,7 +272,13 @@ class PolestarDataPortalApi:
             url = f"{self._base_url}{path}"
             try:
                 async with self._session.get(
-                    url, headers=headers, timeout=REQUEST_TIMEOUT
+                    url,
+                    headers=headers,
+                    timeout=REQUEST_TIMEOUT,
+                    # The Authorization header travels on this request. A
+                    # redirect would replay the bearer token to whatever host
+                    # the response names, so 3xx is reported, never followed.
+                    allow_redirects=False,
                 ) as response:
                     # An expired token is indistinguishable from bad
                     # credentials by status alone, so retry once with a fresh
@@ -320,6 +321,11 @@ class PolestarDataPortalApi:
         if status == 429:
             raise PolestarRateLimitError(
                 f"Rate limit reached reading {context}: {message}"
+            )
+        if 300 <= status < 400:
+            raise PolestarApiError(
+                f"Reading {context} was redirected (HTTP {status}). The Data "
+                "Portal does not redirect, so it was not followed."
             )
         raise PolestarApiError(f"Reading {context} returned HTTP {status}: {message}")
 

@@ -44,6 +44,9 @@ _LOGGER = logging.getLogger(__name__)
 # than a market-specific URL that may not exist for them.
 PORTAL_URL = "https://data-portal.polestar.com"
 
+# Fields that may legitimately be submitted empty.
+OPTIONAL_FIELDS = frozenset({CONF_DELEGATED_ACCOUNT_ID})
+
 
 def _credentials_schema(defaults: Mapping[str, Any] | None = None) -> vol.Schema:
     """Build the credential form, pre-filled from ``defaults`` when re-authing."""
@@ -124,15 +127,19 @@ class PolestarDataPortalConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             user_input = _clean(user_input)
+
+            # The account ID identifies the Data Portal account these
+            # credentials belong to, so it keeps the entry unique even if the
+            # client ID is rotated later. It is checked before the credentials
+            # are validated so adding the same account twice costs no requests
+            # from the daily allowance.
+            if account_id := user_input.get(CONF_ACCOUNT_ID):
+                await self.async_set_unique_id(account_id)
+                self._abort_if_unique_id_configured()
+
             vins, errors = await _async_validate(self.hass, user_input)
 
             if not errors:
-                # The account ID identifies the Data Portal account these
-                # credentials belong to, so it keeps the entry unique even if
-                # the client ID is rotated later.
-                await self.async_set_unique_id(user_input[CONF_ACCOUNT_ID])
-                self._abort_if_unique_id_configured()
-
                 _LOGGER.debug("Data Portal credentials cover %d vehicle(s)", len(vins))
                 return self.async_create_entry(
                     title="Polestar Data Portal",
@@ -164,9 +171,17 @@ class PolestarDataPortalConfigFlow(ConfigFlow, domain=DOMAIN):
             _, errors = await _async_validate(self.hass, user_input)
 
             if not errors:
-                return self.async_update_reload_and_abort(
-                    entry, data_updates=user_input
-                )
+                # Re-authenticating with another account's credentials would
+                # leave the entry's devices and history pointing at vehicles
+                # the new credential cannot read, so it is refused rather than
+                # silently rebound.
+                await self.async_set_unique_id(user_input.get(CONF_ACCOUNT_ID))
+                self._abort_if_unique_id_mismatch(reason="account_mismatch")
+
+                # ``data`` rather than ``data_updates``: the form shows every
+                # stored value, so clearing the optional delegated account in
+                # it has to clear it on the entry too.
+                return self.async_update_reload_and_abort(entry, data=user_input)
 
         return self.async_show_form(
             step_id="reauth_confirm",
@@ -224,9 +239,18 @@ class PolestarDataPortalOptionsFlow(OptionsFlow):
 
 
 def _clean(user_input: dict[str, Any]) -> dict[str, Any]:
-    """Trim whitespace pasted in from the Data Portal and drop empty values."""
+    """Trim whitespace pasted in from the Data Portal.
+
+    Only the optional fields are dropped when they come back empty. A blank
+    required field is kept so that validation reports it as bad credentials,
+    rather than the flow failing on a missing key.
+    """
     cleaned = {
         key: value.strip() if isinstance(value, str) else value
         for key, value in user_input.items()
     }
-    return {key: value for key, value in cleaned.items() if value not in ("", None)}
+    return {
+        key: value
+        for key, value in cleaned.items()
+        if key not in OPTIONAL_FIELDS or value not in ("", None)
+    }

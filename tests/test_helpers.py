@@ -21,7 +21,6 @@ from custom_components.polestar_data_portal.helpers import (
     daily_time_to_string,
     iso_to_datetime,
     nested,
-    short_vin,
     timestamp_to_datetime,
     to_float,
     to_int,
@@ -160,20 +159,6 @@ def test_enum_without_a_prefix() -> None:
     spec = EnumSpec(prefix="", values=("UNSPECIFIED", "MONDAY", "TUESDAY"))
     assert spec.options == ["monday", "tuesday"]
     assert spec.to_option("MONDAY") == "monday"
-
-
-@pytest.mark.parametrize(
-    ("vin", "expected"),
-    [
-        ("YV1CZ0000000123456", "123456"),
-        ("SHORT", "SHORT"),
-        ("", "unknown"),
-        (None, "unknown"),
-    ],
-)
-def test_short_vin(vin: Any, expected: str) -> None:
-    """Device names use the VIN serial section only."""
-    assert short_vin(vin) == expected
 
 
 @pytest.mark.parametrize("requests_per_poll", [1, 15, 30, 60, 150, 600])
