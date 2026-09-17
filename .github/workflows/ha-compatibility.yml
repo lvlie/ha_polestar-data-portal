@@ -68,6 +68,18 @@ jobs:
             --host 0.0.0.0 --port 4010 --errors > prism.log 2>&1 &
           sleep 10
 
+      - name: Check the client against the spec with Prism
+        run: |
+          python3 -m pip install --quiet aiohttp
+          python3 scripts/prism_contract_check.py
+          # Prism logs a validation error for any request the spec rejects,
+          # such as a missing x-client-id header or a bad auth scheme.
+          if grep -q "VALIDATOR.*error" prism.log; then
+            echo "Prism rejected a request:"
+            grep -B4 "VALIDATOR.*error" prism.log
+            exit 1
+          fi
+
       - name: Start Home Assistant against the mock
         run: python3 scripts/ha_smoke.py --start --ha-version ${{ matrix.ha_version }}
 

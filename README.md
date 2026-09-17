@@ -170,8 +170,11 @@ not decoration:
   (`python3 scripts/generate_enums.py`).
 - The tests build every mocked API response from it, so a schema change shows
   up as a failing test rather than a silently broken sensor.
-- CI runs the integration against a [Prism](https://github.com/stoplightio/prism)
-  mock server driven by this same file, inside a real Home Assistant container.
+- CI runs the real client against a [Prism](https://github.com/stoplightio/prism)
+  mock driven by this same file (`scripts/prism_contract_check.py`). Prism
+  validates every request against the spec, so a missing header or a bad auth
+  scheme fails the build. It then boots the integration against that mock
+  inside a real Home Assistant container.
 
 To update it, replace the file and run:
 

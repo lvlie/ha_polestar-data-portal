@@ -198,7 +198,7 @@ class PolestarDataPortalApi:
                 lifetime = 3600.0
 
             self._access_token = access_token
-            self._token_type = body.get("tokenType") or "Bearer"
+            self._token_type = self._normalize_token_type(body.get("tokenType"))
             self._token_expires_at = time.monotonic() + max(
                 lifetime - TOKEN_EXPIRY_MARGIN, 0.0
             )
@@ -206,6 +206,22 @@ class PolestarDataPortalApi:
 
             _LOGGER.debug("Obtained Data Portal access token (valid %ss)", lifetime)
             return access_token, self._token_generation
+
+    @staticmethod
+    def _normalize_token_type(token_type: Any) -> str:
+        """Return the Authorization scheme to use for this token.
+
+        The spec declares the security scheme as HTTP bearer, so bearer is the
+        only usable answer. Echoing back whatever the token endpoint reports
+        would build a malformed Authorization header and turn every subsequent
+        request into a confusing 401.
+        """
+        if isinstance(token_type, str) and token_type.strip().lower() != "bearer":
+            _LOGGER.debug(
+                "Token endpoint reported an unexpected tokenType (%s); using Bearer",
+                token_type,
+            )
+        return "Bearer"
 
     @staticmethod
     def _oauth_error_message(body: dict[str, Any], status: int) -> str:

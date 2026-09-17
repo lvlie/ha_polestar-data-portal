@@ -238,3 +238,31 @@ async def test_identical_replacement_token_still_counts_as_a_refresh(
 
     assert first_token == second_token
     assert second_generation != first_generation
+
+
+@pytest.mark.parametrize(
+    "token_type", ["Bearer", "bearer", "BEARER", "string", "", None, 42]
+)
+async def test_authorization_scheme_is_always_bearer(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, token_type: object
+) -> None:
+    """The Authorization header stays valid whatever tokenType comes back.
+
+    The spec declares HTTP bearer auth, so echoing an unexpected tokenType
+    back would produce a malformed header and 401 every later request.
+    """
+    aioclient_mock.post(
+        TOKEN_URL,
+        json={
+            "accessToken": "test-access-token",
+            "expiresIn": 3600,
+            "tokenType": token_type,
+        },
+    )
+    mock_vehicles(aioclient_mock)
+    api = build_api(hass)
+
+    await api.async_get_vehicles()
+
+    headers = aioclient_mock.mock_calls[-1][3]
+    assert headers["Authorization"] == "Bearer test-access-token"
