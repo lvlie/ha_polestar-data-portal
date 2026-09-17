@@ -5,7 +5,7 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - 2026-09-17
+## [0.1.0] - 2026-09-17
 
 First release validated against a real vehicle rather than only against the
 published OpenAPI specification. A 2022 Polestar 2 turned up four parsing bugs
@@ -57,9 +57,14 @@ and a large number of entities that could never populate on that model.
 - A regression test suite built from a real vehicle's payload, asserting that
   no entity enabled by default sits at unknown on that car.
 
-## [0.1.0] - 2026-09-17
+## [0.0.1] - 2026-09-17
 
 Initial release.
+
+> Released as tag `0.0.1`. The `manifest.json` bundled in that tag reads
+> `0.1.0` by mistake, so Home Assistant's diagnostics report `0.1.0` while
+> HACS reports the release tag `0.0.1`. Both refer to this release. The
+> mismatch is corrected from `0.1.0` onwards.
 
 ### Added
 
@@ -83,5 +88,5 @@ Initial release.
 - Diagnostics that redact credentials, VINs, coordinates and charge-location
   names.
 
-[0.2.0]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/v0.2.0
-[0.1.0]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/v0.1.0
+[0.1.0]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.1.0
+[0.0.1]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.0.1
