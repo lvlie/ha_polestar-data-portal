@@ -224,3 +224,20 @@ async def test_changing_options_clears_the_discovery_cache(
     assert DOMAIN_ODOMETER in coordinator.supported_domains
     assert mock_config_entry.state is ConfigEntryState.LOADED
     assert coordinator.update_interval == timedelta(minutes=30)
+
+
+async def test_removing_the_entry_clears_the_discovery_cache(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    hass_storage: dict,
+) -> None:
+    """Deleting the integration must not leave account data behind on disk."""
+    await setup(hass, mock_config_entry, aioclient_mock=aioclient_mock)
+    assert await DiscoveryCache(hass).async_get(mock_config_entry.entry_id)
+
+    await hass.config_entries.async_remove(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert await DiscoveryCache(hass).async_get(mock_config_entry.entry_id) is None
+    assert hass_storage["polestar_data_portal.discovery"]["data"] == {}

@@ -183,6 +183,11 @@ def build_device_names(vins: Sequence[str]) -> dict[str, str]:
     The caller passes every VIN on the account, not just the ones that set up
     successfully, so a vehicle temporarily missing a scope cannot make the
     other devices rename themselves.
+
+    Only the serial section of the VIN is used, never the whole thing: the
+    device name decides the entity IDs, and Home Assistant writes those to the
+    log, to automation traces and to the recorder. The full VIN stays on the
+    device as its serial number and in each entity's unique ID.
     """
     unique = list(dict.fromkeys(vins))
     if len(unique) <= 1:
@@ -196,20 +201,6 @@ def build_device_names(vins: Sequence[str]) -> dict[str, str]:
 
     # Identical VINs cannot happen, but never return a name that hides one.
     return {vin: f"{MANUFACTURER} {vin}" for vin in unique}
-
-
-def short_vin(vin: str) -> str:
-    """Return the trailing serial part of a VIN, for use in a device name.
-
-    The device name decides the entity IDs, and Home Assistant writes entity
-    IDs to the log, to automation traces and to the recorder. Naming a device
-    after the full VIN would therefore spread it across places users copy and
-    share, so only the serial section is used. The full VIN stays on the
-    device as its serial number and in each entity's unique ID.
-    """
-    if not isinstance(vin, str) or not vin:
-        return "unknown"
-    return vin[-6:] if len(vin) > 6 else vin
 
 
 def mask_vin(vin: str) -> str:

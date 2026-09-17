@@ -199,6 +199,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: PolestarConfigEntry) ->
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
+async def async_remove_entry(hass: HomeAssistant, entry: PolestarConfigEntry) -> None:
+    """Drop the cached discovery when the entry is deleted.
+
+    Nothing reads it again once the entry is gone, so leaving it behind would
+    only grow Home Assistant's storage with dead account data.
+    """
+    await DiscoveryCache(hass).async_invalidate(entry.entry_id)
+
+
 async def async_reload_entry(hass: HomeAssistant, entry: PolestarConfigEntry) -> None:
     """Reload the entry when its options change.
 

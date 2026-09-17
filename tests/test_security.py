@@ -3,15 +3,20 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 import pytest
+from aiohttp import ClientSession
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
-from custom_components.polestar_data_portal.api import PolestarDataPortalApi
+from custom_components.polestar_data_portal.api import (
+    PolestarApiError,
+    PolestarDataPortalApi,
+)
 from custom_components.polestar_data_portal.const import (
     CONF_ACCOUNT_ID,
     DOMAIN_BATTERY,
@@ -23,6 +28,7 @@ from custom_components.polestar_data_portal.helpers import mask_vin
 
 from .conftest import (
     ACCOUNT_ID,
+    BASE_URL,
     CONFIG_DATA,
     TOKEN_URL,
     VIN,
@@ -33,6 +39,26 @@ from .conftest import (
 )
 
 SECRET = CONFIG_DATA[CONF_CLIENT_SECRET]
+
+
+def spy_on_requests(session: ClientSession) -> list[tuple[str, str, dict[str, Any]]]:
+    """Record the keyword arguments the client passes to aiohttp.
+
+    ``AiohttpClientMocker`` replaces ``ClientSession._request`` and does not
+    keep the redirect setting in ``mock_calls``, so it is captured here. This
+    is the only place a test reaches past the public API, and it does so
+    because ``allow_redirects`` is a security property that has no observable
+    effect through a mock that never redirects.
+    """
+    calls: list[tuple[str, str, dict[str, Any]]] = []
+    inner = session._request
+
+    async def record(method: str, url: Any, **kwargs: Any) -> Any:
+        calls.append((method, str(url), kwargs))
+        return await inner(method, url, **kwargs)
+
+    object.__setattr__(session, "_request", record)
+    return calls
 
 
 @pytest.mark.parametrize(
@@ -69,8 +95,10 @@ async def test_token_request_does_not_follow_redirects(
 ) -> None:
     """A redirect must not replay the client secret to another host."""
     mock_token(aioclient_mock)
+    session = async_get_clientsession(hass)
+    calls = spy_on_requests(session)
     api = PolestarDataPortalApi(
-        async_get_clientsession(hass),
+        session,
         client_id="client_12345",
         client_secret=SECRET,
         account_id=ACCOUNT_ID,
@@ -79,9 +107,57 @@ async def test_token_request_does_not_follow_redirects(
 
     await api.async_get_access_token()
 
-    assert aioclient_mock.mock_calls[0][0] == "POST"
-    # aioclient_mock records the kwargs the client passed through.
-    assert api._token_url.startswith("https://")
+    method, url, kwargs = calls[0]
+    assert method == "POST"
+    assert url == TOKEN_URL
+    assert kwargs["allow_redirects"] is False
+
+
+async def test_data_requests_do_not_follow_redirects(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """A redirect must not replay the bearer token to another host."""
+    mock_token(aioclient_mock)
+    mock_vehicles(aioclient_mock, [VIN])
+    session = async_get_clientsession(hass)
+    calls = spy_on_requests(session)
+    api = PolestarDataPortalApi(
+        session,
+        client_id="client_12345",
+        client_secret=SECRET,
+        account_id=ACCOUNT_ID,
+        token_url=TOKEN_URL,
+    )
+
+    await api.async_get_vehicles()
+
+    gets = [call for call in calls if call[0] == "GET"]
+    assert gets, "no GET was recorded"
+    for _method, _url, kwargs in gets:
+        assert "Authorization" in kwargs["headers"]
+        assert kwargs["allow_redirects"] is False
+
+
+async def test_a_redirected_response_is_reported_not_parsed(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """A 3xx is surfaced as an error rather than treated as data."""
+    mock_token(aioclient_mock)
+    aioclient_mock.get(
+        f"{BASE_URL}/v1/vehicles",
+        status=302,
+        headers={"Location": "https://example.invalid/v1/vehicles"},
+    )
+    api = PolestarDataPortalApi(
+        async_get_clientsession(hass),
+        client_id="client_12345",
+        client_secret=SECRET,
+        account_id=ACCOUNT_ID,
+        token_url=TOKEN_URL,
+    )
+
+    with pytest.raises(PolestarApiError, match="redirected"):
+        await api.async_get_vehicles()
 
 
 async def test_secrets_never_reach_the_log(
@@ -134,6 +210,46 @@ async def test_failure_messages_do_not_leak_the_vin(
     await hass.config_entries.async_setup(mock_config_entry.entry_id)
     await hass.async_block_till_done()
 
+    log = "\n".join(
+        record.getMessage()
+        for record in caplog.records
+        if not record.name.startswith("pytest_homeassistant_custom_component")
+    )
+    assert VIN not in log
+    assert mask_vin(VIN) in log
+
+
+async def test_a_failed_poll_does_not_leak_the_vin(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The total-failure path masks the VIN too.
+
+    Home Assistant logs an ``UpdateFailed`` message verbatim, so a poll where
+    no domain answers is the one error path that reaches the log without going
+    through the client.
+    """
+    mock_full_account(aioclient_mock)
+    mock_config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    coordinator = mock_config_entry.runtime_data.coordinators[0]
+    aioclient_mock.clear_requests()
+    mock_token(aioclient_mock)
+    mock_all_domains(
+        aioclient_mock,
+        VIN,
+        status_for=dict.fromkeys(coordinator.supported_domains, 503),
+    )
+
+    caplog.clear()
+    caplog.set_level(logging.DEBUG)
+    await coordinator.async_refresh()
+
+    assert not coordinator.last_update_success
     log = "\n".join(
         record.getMessage()
         for record in caplog.records

@@ -224,6 +224,82 @@ async def test_reauth_rejects_bad_credentials(
     assert result["errors"] == {"base": "invalid_auth"}
 
 
+async def test_reauth_rejects_another_account(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Re-auth must not rebind the entry to a different Data Portal account.
+
+    The devices, history and automations on this entry belong to the vehicles
+    of the original account, so credentials for another one are refused rather
+    than quietly swapped in.
+    """
+    mock_config_entry.add_to_hass(hass)
+    mock_token(aioclient_mock)
+    mock_vehicles(aioclient_mock)
+
+    result = await mock_config_entry.start_reauth_flow(hass)
+    other_account = {
+        **CONFIG_DATA,
+        CONF_ACCOUNT_ID: "11111111-2222-3333-4444-555555555555",
+    }
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], other_account
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "account_mismatch"
+    assert mock_config_entry.data[CONF_ACCOUNT_ID] == ACCOUNT_ID
+
+
+async def test_reauth_can_clear_the_delegated_account(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_setup_entry: Any,
+) -> None:
+    """Emptying the optional field in the form empties it on the entry."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Polestar Data Portal",
+        data={**CONFIG_DATA, CONF_DELEGATED_ACCOUNT_ID: "fleet@example.com"},
+        unique_id=ACCOUNT_ID,
+    )
+    entry.add_to_hass(hass)
+    mock_token(aioclient_mock)
+    mock_vehicles(aioclient_mock)
+
+    result = await entry.start_reauth_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**CONFIG_DATA, CONF_DELEGATED_ACCOUNT_ID: ""}
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reauth_successful"
+    assert CONF_DELEGATED_ACCOUNT_ID not in entry.data
+
+
+async def test_a_blank_required_field_is_reported_not_crashed(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+) -> None:
+    """An empty required value comes back as a form error.
+
+    The frontend blocks this, but the websocket API does not, and dropping the
+    key would fail the flow with an unhandled error instead of a message.
+    """
+    aioclient_mock.post(TOKEN_URL, status=401, json={"error": "invalid_client"})
+
+    result = await start_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**CONFIG_DATA, CONF_CLIENT_ID: "   "}
+    )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_auth"}
+
+
 async def test_options_flow_sets_interval(
     hass: HomeAssistant,
     aioclient_mock: AiohttpClientMocker,

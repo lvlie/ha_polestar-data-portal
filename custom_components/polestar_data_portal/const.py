@@ -111,16 +111,6 @@ API_DOMAIN_SCOPES: Final[dict[str, str]] = {
     DOMAIN_TARGET_SOC: "pdp-charging/targetSoc",
 }
 
-# --- Enum prefixes ---------------------------------------------------------
-# The API returns protobuf-style enum values such as
-# "CHARGING_STATUS_V2_CHARGING". Sensors strip the prefix and lowercase the
-# remainder so the Home Assistant state becomes "charging".
-
-ENUM_UNSPECIFIED_SUFFIX: Final = "UNSPECIFIED"
-
-# Values that mean "there is nothing wrong", used by the problem sensors.
-NO_WARNING_SUFFIX: Final = "NO_WARNING"
-
 
 def recommended_scan_interval_minutes(requests_per_poll: int) -> int:
     """Return the smallest polling interval that respects the daily budget.
