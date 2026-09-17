@@ -35,6 +35,9 @@ REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=30)
 # real deployments.
 LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
+# Used when the token endpoint does not report a usable lifetime.
+DEFAULT_TOKEN_LIFETIME = 3600.0
+
 
 class PolestarApiError(Exception):
     """Raised for a request that failed and may succeed when retried."""
@@ -191,11 +194,7 @@ class PolestarDataPortalApi:
             if not access_token:
                 raise PolestarApiError("Token response did not contain accessToken")
 
-            expires_in = body.get("expiresIn")
-            try:
-                lifetime = float(expires_in)
-            except (TypeError, ValueError):
-                lifetime = 3600.0
+            lifetime = self._token_lifetime(body.get("expiresIn"))
 
             self._access_token = access_token
             self._token_type = self._normalize_token_type(body.get("tokenType"))
@@ -206,6 +205,30 @@ class PolestarDataPortalApi:
 
             _LOGGER.debug("Obtained Data Portal access token (valid %ss)", lifetime)
             return access_token, self._token_generation
+
+    @staticmethod
+    def _token_lifetime(expires_in: Any) -> float:
+        """Return how long the token is good for, in seconds.
+
+        A missing, unparseable or non-positive lifetime is treated as a
+        malformed answer and replaced by the default. Honouring a zero would
+        mean re-requesting a token before every single call, which would burn
+        the daily request allowance in minutes; if the token really is expired,
+        the 401 retry path fetches a new one exactly once instead.
+        """
+        try:
+            lifetime = float(expires_in)
+        except (TypeError, ValueError):
+            lifetime = 0.0
+
+        if lifetime <= 0:
+            _LOGGER.debug(
+                "Token endpoint reported an unusable expiresIn (%s); assuming %ss",
+                expires_in,
+                DEFAULT_TOKEN_LIFETIME,
+            )
+            return DEFAULT_TOKEN_LIFETIME
+        return lifetime
 
     @staticmethod
     def _normalize_token_type(token_type: Any) -> str:

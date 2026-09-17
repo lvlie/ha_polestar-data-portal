@@ -31,16 +31,22 @@ ENTRY_ID = "01JQPOLESTARDATAPORTALSMOKE0"
 
 # Entities that must exist for the run to count as a success. These span three
 # platforms and four API domains, so a regression in any of them is caught.
-# The spec's example account holds two VINs, YV1CZ0000000000000 and
-# LPSVS0000000000000, which differ only in their first five characters. The
-# unique-suffix naming therefore falls back past the usual six characters,
-# giving "Polestar Z0000000000000" for the first of them.
-REQUIRED_ENTITIES = (
-    "sensor.polestar_z0000000000000_battery",
-    "sensor.polestar_z0000000000000_odometer",
-    "binary_sensor.polestar_z0000000000000_front_left_door",
-    "device_tracker.polestar_z0000000000000_location",
+# Checked by unique ID rather than entity ID: unique IDs are built from the
+# VIN and an entity key, so they do not move when the device naming changes.
+# Each of these also covers a different platform and API domain.
+REQUIRED_UNIQUE_ID_SUFFIXES = (
+    "_battery_charge_level",
+    "_odometer",
+    "_front_left_door",
+    "_location",
 )
+
+# The spec's example account lists two vehicles.
+EXPECTED_DEVICES = 2
+
+# One vehicle contributes roughly a hundred enabled entities; a much smaller
+# number means platforms silently failed to load.
+MINIMUM_ENTITIES = 150
 
 CONFIGURATION_YAML = """
 default_config:
@@ -150,37 +156,97 @@ def read_log() -> str:
     return result.stdout + result.stderr
 
 
+def read_registry(name: str) -> dict:
+    """Return one of Home Assistant's .storage registries, or {} if unwritten."""
+    path = CONFIG_DIR / ".storage" / name
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        # Home Assistant may be mid-write; the caller retries.
+        return {}
+
+
 def verify() -> int:
-    """Check that the integration set up and registered its entities."""
-    deadline = time.time() + 180
+    """Check that the integration set up and registered its entities.
+
+    The entity registry on disk is the source of truth here. Grepping the log
+    for entity IDs does not work: Home Assistant only logs registrations at
+    a log level the container does not use by default.
+    """
+    deadline = time.time() + 240
+    entities: list[dict] = []
+    devices: list[dict] = []
     log = ""
 
     while time.time() < deadline:
         log = read_log()
 
-        if f"Error setting up entry Polestar Data Portal for {DOMAIN}" in log:
+        if "Error setting up entry Polestar Data Portal" in log:
             print("FAILED: the config entry did not set up", file=sys.stderr)
             break
 
-        found = [entity for entity in REQUIRED_ENTITIES if entity in log]
-        if len(found) == len(REQUIRED_ENTITIES):
-            print(f"SUCCESS: all {len(found)} expected entities were registered")
-            for entity in found:
-                print(f"  - {entity}")
-            if failures := _integration_errors(log):
-                print("\nBut the log contains integration errors:", file=sys.stderr)
-                print("\n".join(failures), file=sys.stderr)
-                return 1
-            return 0
+        entities = [
+            entity
+            for entity in read_registry("core.entity_registry")
+            .get("data", {})
+            .get("entities", [])
+            if entity.get("platform") == DOMAIN
+        ]
+        devices = [
+            device
+            for device in read_registry("core.device_registry")
+            .get("data", {})
+            .get("devices", [])
+            if any(item[0] == DOMAIN for item in device.get("identifiers", []))
+        ]
+
+        if len(entities) >= MINIMUM_ENTITIES and devices:
+            return _report(entities, devices, log)
 
         time.sleep(5)
 
-    print("FAILED: expected entities never appeared", file=sys.stderr)
-    missing = [entity for entity in REQUIRED_ENTITIES if entity not in log]
-    print(f"Missing: {missing}", file=sys.stderr)
+    print(
+        f"FAILED: only {len(entities)} entities and {len(devices)} devices "
+        f"were registered after waiting",
+        file=sys.stderr,
+    )
     print("\n----- log tail -----", file=sys.stderr)
     print("\n".join(log.splitlines()[-120:]), file=sys.stderr)
     return 1
+
+
+def _report(entities: list[dict], devices: list[dict], log: str) -> int:
+    """Check the registered entities against what the run must produce."""
+    unique_ids = [entity.get("unique_id", "") for entity in entities]
+    missing = [
+        suffix
+        for suffix in REQUIRED_UNIQUE_ID_SUFFIXES
+        if not any(unique_id.endswith(suffix) for unique_id in unique_ids)
+    ]
+
+    print(f"devices registered : {len(devices)}")
+    for device in devices:
+        print(f"  - {device.get('name')}")
+    print(f"entities registered: {len(entities)}")
+
+    failures: list[str] = []
+    if missing:
+        failures.append(f"missing entities with unique IDs ending: {missing}")
+    if len(devices) != EXPECTED_DEVICES:
+        failures.append(f"expected {EXPECTED_DEVICES} devices, found {len(devices)}")
+    if errors := _integration_errors(log):
+        failures.append("integration errors in the log:\n  " + "\n  ".join(errors))
+
+    if failures:
+        print("\nFAILED:", file=sys.stderr)
+        for failure in failures:
+            print(f"  {failure}", file=sys.stderr)
+        return 1
+
+    print("\nSUCCESS: the integration set up and all checked entities exist")
+    return 0
 
 
 def _integration_errors(log: str) -> list[str]:

@@ -13,7 +13,6 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import (
-    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
     DEGREE,
     PERCENTAGE,
     EntityCategory,
@@ -79,6 +78,15 @@ from .helpers import (
     timestamp_to_datetime,
     to_float,
 )
+
+try:  # Home Assistant 2026.3 and later
+    from homeassistant.const import UnitOfDensity
+
+    MICROGRAMS_PER_CUBIC_METER = UnitOfDensity.MICROGRAMS_PER_CUBIC_METER
+except ImportError:  # deprecated alias, same value, removed in Core 2027.8
+    from homeassistant.const import (
+        CONCENTRATION_MICROGRAMS_PER_CUBIC_METER as MICROGRAMS_PER_CUBIC_METER,
+    )
 
 PARALLEL_UPDATES = 0
 
@@ -904,7 +912,7 @@ CHARGING_SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
         translation_key="cabin_particulate_matter",
         api_domain=DOMAIN_PRE_CLEANING,
         device_class=SensorDeviceClass.PM25,
-        native_unit_of_measurement=CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+        native_unit_of_measurement=MICROGRAMS_PER_CUBIC_METER,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=_number("measuredParticulateMatter25"),
     ),
