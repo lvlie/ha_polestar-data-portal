@@ -25,8 +25,10 @@ TOKEN_URL = f"{BASE_URL}/token"
 
 VIN = "YV1CZ0000000123456"
 
-# Entity IDs derive from the device name, which uses only the VIN serial part.
-ENTITY_PREFIX = "polestar_123456"
+# Entity IDs derive from the device name. A single-vehicle account is named
+# just "Polestar"; a VIN suffix is only added when several vehicles share one
+# account (see helpers.build_device_names).
+ENTITY_PREFIX = "polestar"
 ACCOUNT_ID = "cf50b789-4e95-4636-977d-4ffb10164d11"
 
 CONFIG_DATA = {

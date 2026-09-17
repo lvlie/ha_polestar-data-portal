@@ -9,13 +9,19 @@ expects.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from functools import cache
 from typing import Any
 
+from .const import MANUFACTURER
+
 UNSPECIFIED_SUFFIXES = ("UNSPECIFIED", "UNDEFINED", "UNKNOWN")
+
+# How much of a VIN is used to tell two vehicles on one account apart. Six
+# characters is the serial section, which differs between any two real cars.
+VIN_SUFFIX_LENGTH = 6
 
 
 @dataclass(frozen=True)
@@ -140,6 +146,33 @@ def daily_time_to_string(value: Any) -> str | None:
     if hour is None or minute is None:
         return None
     return f"{hour:02d}:{minute:02d}"
+
+
+def build_device_names(vins: Sequence[str]) -> dict[str, str]:
+    """Return the device name to use for each VIN on an account.
+
+    A single vehicle is simply "Polestar", which keeps the entity IDs it
+    generates short: ``sensor.polestar_battery``. Only when an account holds
+    several vehicles is a VIN suffix added to tell them apart, using the
+    shortest suffix that is unique across the account so two cars whose
+    serials happen to end in the same digits still get distinct names.
+
+    The caller passes every VIN on the account, not just the ones that set up
+    successfully, so a vehicle temporarily missing a scope cannot make the
+    other devices rename themselves.
+    """
+    unique = list(dict.fromkeys(vins))
+    if len(unique) <= 1:
+        return dict.fromkeys(unique, MANUFACTURER)
+
+    longest = max(len(vin) for vin in unique)
+    for length in range(VIN_SUFFIX_LENGTH, longest + 1):
+        suffixes = {vin: vin[-length:] for vin in unique}
+        if len(set(suffixes.values())) == len(unique):
+            return {vin: f"{MANUFACTURER} {suffix}" for vin, suffix in suffixes.items()}
+
+    # Identical VINs cannot happen, but never return a name that hides one.
+    return {vin: f"{MANUFACTURER} {vin}" for vin in unique}
 
 
 def short_vin(vin: str) -> str:

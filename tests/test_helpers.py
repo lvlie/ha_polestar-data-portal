@@ -17,6 +17,7 @@ from custom_components.polestar_data_portal.const import (
 from custom_components.polestar_data_portal.enums import OPEN_STATUS, SYNC_STATUS
 from custom_components.polestar_data_portal.helpers import (
     EnumSpec,
+    build_device_names,
     daily_time_to_string,
     iso_to_datetime,
     nested,
@@ -202,3 +203,36 @@ def test_daily_estimate_includes_token_refreshes() -> None:
     # 96 polls a day at 15 domains, plus hourly token refreshes.
     assert estimated_daily_requests(15, 15) == 96 * 15 + 24
     assert estimated_daily_requests(15, 0) == DAILY_REQUEST_BUDGET
+
+
+def test_single_vehicle_gets_the_short_name() -> None:
+    """One car needs no disambiguation, so entity IDs stay short."""
+    assert build_device_names(["YV1CZ0000000123456"]) == {
+        "YV1CZ0000000123456": "Polestar"
+    }
+
+
+def test_several_vehicles_are_distinguished_by_vin_serial() -> None:
+    """Two cars are told apart by the serial part of their VINs."""
+    names = build_device_names(["YV1CZ0000000123456", "YV1CZ0000000654321"])
+    assert names == {
+        "YV1CZ0000000123456": "Polestar 123456",
+        "YV1CZ0000000654321": "Polestar 654321",
+    }
+
+
+def test_vins_sharing_a_serial_still_get_distinct_names() -> None:
+    """A longer suffix is used when the usual six characters collide.
+
+    The spec's own example VINs differ only in their first five characters,
+    so this is not a hypothetical.
+    """
+    names = build_device_names(["YV1CZ0000000000000", "LPSVS0000000000000"])
+    assert len(set(names.values())) == 2
+    assert all(name.startswith("Polestar ") for name in names.values())
+
+
+def test_device_names_handle_empty_and_duplicate_input() -> None:
+    """A missing or repeated VIN must not raise or produce a clashing name."""
+    assert build_device_names([]) == {}
+    assert build_device_names(["VIN1", "VIN1"]) == {"VIN1": "Polestar"}

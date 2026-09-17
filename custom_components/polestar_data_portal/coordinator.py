@@ -22,7 +22,7 @@ from .api import (
     PolestarRateLimitError,
 )
 from .const import API_DOMAIN_PATHS, DOMAIN, MANUFACTURER
-from .helpers import mask_vin, short_vin
+from .helpers import mask_vin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,6 +50,7 @@ class PolestarVehicleCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]
         vin: str,
         update_interval: timedelta,
         known_domains: set[str] | None = None,
+        device_name: str = MANUFACTURER,
     ) -> None:
         """Initialize the coordinator.
 
@@ -65,6 +66,7 @@ class PolestarVehicleCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]
         )
         self.api = api
         self.vin = vin
+        self.device_name = device_name
         self.supported_domains: set[str] = set()
         self._known_domains = known_domains
         self._initial_data: dict[str, dict[str, Any]] | None = None
@@ -76,7 +78,7 @@ class PolestarVehicleCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]
         return DeviceInfo(
             identifiers={(DOMAIN, self.vin)},
             manufacturer=MANUFACTURER,
-            name=f"Polestar {short_vin(self.vin)}",
+            name=self.device_name,
             serial_number=self.vin,
         )
 

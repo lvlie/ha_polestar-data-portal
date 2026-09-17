@@ -6,6 +6,7 @@ from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
@@ -13,6 +14,7 @@ from custom_components.polestar_data_portal.const import (
     API_DOMAIN_PATHS,
     CONF_SCAN_INTERVAL_MINUTES,
     DEFAULT_SCAN_INTERVAL_MINUTES,
+    DOMAIN,
     DOMAIN_BATTERY,
     DOMAIN_LOCATION,
     DOMAIN_ODOMETER,
@@ -207,3 +209,66 @@ async def test_configured_interval_is_honoured(
 
     coordinator = mock_config_entry.runtime_data.coordinators[0]
     assert coordinator.update_interval == timedelta(minutes=60)
+
+
+async def test_single_vehicle_device_name_is_short(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """One car on the account produces sensor.polestar_* entity IDs."""
+    mock_full_account(aioclient_mock)
+    await setup_integration(hass, mock_config_entry)
+
+    devices = dr.async_get(hass)
+    device = devices.async_get_device(identifiers={(DOMAIN, VIN)})
+    assert device.name == "Polestar"
+    # The full VIN is still recorded, just not in the name.
+    assert device.serial_number == VIN
+
+    assert hass.states.get("sensor.polestar_battery")
+
+
+async def test_several_vehicles_get_distinct_names(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """A second car adds a VIN suffix so the devices stay distinguishable."""
+    vins = ["YV1CZ0000000123456", "YV1CZ0000000654321"]
+    mock_full_account(aioclient_mock, vins)
+    await setup_integration(hass, mock_config_entry)
+
+    devices = dr.async_get(hass)
+    names = {devices.async_get_device(identifiers={(DOMAIN, vin)}).name for vin in vins}
+    assert names == {"Polestar 123456", "Polestar 654321"}
+
+    assert hass.states.get("sensor.polestar_123456_battery")
+    assert hass.states.get("sensor.polestar_654321_battery")
+    assert hass.states.get("sensor.polestar_battery") is None
+
+
+async def test_a_vehicle_that_fails_setup_still_shapes_the_names(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Names come from the account's vehicle list, not from what set up.
+
+    Otherwise a car that temporarily loses a scope would silently rename the
+    other cars' devices, churning their entity IDs.
+    """
+    vins = ["YV1CZ0000000123456", "YV1CZ0000000654321"]
+    mock_token(aioclient_mock)
+    mock_vehicles(aioclient_mock, vins)
+    mock_all_domains(aioclient_mock, vins[0])
+    # The second car answers nothing, so it is skipped entirely.
+    mock_all_domains(
+        aioclient_mock, vins[1], status_for=dict.fromkeys(API_DOMAIN_PATHS, 403)
+    )
+    await setup_integration(hass, mock_config_entry)
+
+    assert len(mock_config_entry.runtime_data.coordinators) == 1
+    devices = dr.async_get(hass)
+    device = devices.async_get_device(identifiers={(DOMAIN, vins[0])})
+    assert device.name == "Polestar 123456"

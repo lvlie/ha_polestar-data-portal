@@ -25,7 +25,7 @@ from .const import (
 )
 from .coordinator import PolestarVehicleCoordinator
 from .discovery import DiscoveryCache
-from .helpers import mask_vin
+from .helpers import build_device_names, mask_vin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -97,10 +97,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: PolestarConfigEntry) -> 
         )
     )
 
+    # Named from every VIN on the account, including any that fail to set up
+    # below, so a vehicle that temporarily loses a scope cannot rename the
+    # others.
+    device_names = build_device_names(list(vehicles))
+
     coordinators: list[PolestarVehicleCoordinator] = []
     for vin, known_domains in vehicles.items():
         coordinator = PolestarVehicleCoordinator(
-            hass, entry, api, vin, interval, known_domains
+            hass,
+            entry,
+            api,
+            vin,
+            interval,
+            known_domains,
+            device_names[vin],
         )
         try:
             await coordinator.async_config_entry_first_refresh()

@@ -31,13 +31,15 @@ ENTRY_ID = "01JQPOLESTARDATAPORTALSMOKE0"
 
 # Entities that must exist for the run to count as a success. These span three
 # platforms and four API domains, so a regression in any of them is caught.
-# The spec's example VIN is YV1CZ0000000000000; the device is named after its
-# serial part, so entity IDs are prefixed polestar_000000.
+# The spec's example account holds two VINs, YV1CZ0000000000000 and
+# LPSVS0000000000000, which differ only in their first five characters. The
+# unique-suffix naming therefore falls back past the usual six characters,
+# giving "Polestar Z0000000000000" for the first of them.
 REQUIRED_ENTITIES = (
-    "sensor.polestar_000000_battery",
-    "sensor.polestar_000000_odometer",
-    "binary_sensor.polestar_000000_front_left_door",
-    "device_tracker.polestar_000000_location",
+    "sensor.polestar_z0000000000000_battery",
+    "sensor.polestar_z0000000000000_odometer",
+    "binary_sensor.polestar_z0000000000000_front_left_door",
+    "device_tracker.polestar_z0000000000000_location",
 )
 
 CONFIGURATION_YAML = """

@@ -135,6 +135,31 @@ portal. The integration handles this the Home Assistant way: it raises a
 re-authentication prompt instead of failing silently, and you paste the new
 values in without losing your entity history or automations.
 
+## Naming
+
+The Data Portal publishes no model, trim or nickname: `/v1/vehicles` returns
+bare VIN strings. There is nothing in the API that distinguishes a Polestar 2
+from a Polestar 4, so the integration cannot name your car for you.
+
+What it does instead is pick a sensible default and get out of the way:
+
+| Vehicles on the account | Device name | Entity IDs |
+| --- | --- | --- |
+| One | `Polestar` | `sensor.polestar_battery` |
+| Several | `Polestar 123456` | `sensor.polestar_123456_battery` |
+
+With several vehicles the suffix is the shortest part of the VIN that is unique
+across your account, so two cars whose serials end in the same digits still get
+distinct names. The names come from every VIN on the account, not just the ones
+that set up successfully, so a car that temporarily loses a scope cannot rename
+the others.
+
+**To get `sensor.polestar_2_*`, rename the device.** Settings → Devices &
+services → Polestar Data Portal → the device → the pencil icon. Home Assistant
+will offer to update every entity ID to match. This is safe here: entity unique
+IDs are built from the VIN, not from the name, so renaming keeps all history,
+statistics and automations pointing at the same entities.
+
 ## API request budget
 
 Polestar allows roughly **10,000 requests per day**. Every refresh costs one
@@ -201,12 +226,11 @@ few deliberate choices are worth knowing about:
   client secret, account ID and access token never reach the log. This is
   enforced by a test that runs a full setup with debug logging enabled and
   asserts none of them appear.
-- **VINs are masked in logs** as `****1234`. Because the device name decides
-  the entity IDs, and Home Assistant writes entity IDs to logs, traces and the
-  recorder, devices are named after the VIN's serial section
-  (`Polestar 123456`) rather than the whole VIN. The full VIN is still on the
-  device as its serial number and in each entity's unique ID, so nothing is
-  lost and renaming the device is safe.
+- **VINs are masked in logs** as `****1234`, and the device name never carries
+  a full VIN (see [Naming](#naming)). Home Assistant writes entity IDs to logs,
+  traces and the recorder, so a device named after the whole VIN would spread
+  it to places people copy and share. The full VIN is still on the device as
+  its serial number and in each entity's unique ID.
 - **Diagnostics are redacted.** The downloadable diagnostics strip credentials,
   VINs, coordinates and charge-location names, so the file can be attached to
   an issue as-is.
