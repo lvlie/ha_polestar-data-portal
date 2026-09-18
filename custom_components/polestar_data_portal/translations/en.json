@@ -346,6 +346,9 @@
       "charge_locations": {
         "name": "Charge locations"
       },
+      "charge_now_updated_at": {
+        "name": "Charge now updated"
+      },
       "charge_timer_start": {
         "name": "Charge timer start"
       },
@@ -361,6 +364,9 @@
           "retrying_car_offline": "Retrying car offline",
           "error": "Error"
         }
+      },
+      "charge_timer_updated_at": {
+        "name": "Charge timer updated"
       },
       "charger_connection_status": {
         "name": "Charger connection status",
@@ -467,6 +473,9 @@
           "pending": "Pending"
         }
       },
+      "climatization_updated_at": {
+        "name": "Climatization data updated"
+      },
       "current_charge_location": {
         "name": "Current charge location"
       },
@@ -560,8 +569,14 @@
       "engine_hours_to_service": {
         "name": "Engine hours to service"
       },
+      "exterior_updated_at": {
+        "name": "Doors and locks data updated"
+      },
       "heading": {
         "name": "Heading"
+      },
+      "health_updated_at": {
+        "name": "Health data updated"
       },
       "location_updated_at": {
         "name": "Location updated"
@@ -578,6 +593,9 @@
       },
       "odometer_updated_at": {
         "name": "Odometer data updated"
+      },
+      "parking_climate_timer_updated_at": {
+        "name": "Parking climate timers updated"
       },
       "parking_climate_timers": {
         "name": "Parking climate timers"
@@ -628,6 +646,9 @@
           "off": "Off",
           "pending": "Pending"
         }
+      },
+      "pre_cleaning_updated_at": {
+        "name": "Pre-cleaning data updated"
       },
       "preconditioning_ending_at": {
         "name": "Preconditioning ending at"

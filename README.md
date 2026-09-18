@@ -47,7 +47,7 @@
 ## What you get
 
 One device per vehicle, with an entity for every field the Data Portal
-publishes: **194 per car, 70 enabled by default**.
+publishes: **201 per car, 77 enabled by default**.
 
 | Area | Examples |
 | --- | --- |
@@ -58,7 +58,8 @@ publishes: **194 per car, 70 enabled by default**.
 | **Health** | Brake fluid, coolant, oil, washer fluid, 12V battery, service interval, 40 exterior lights plus one aggregate failure sensor, four tyre pressures and their warnings |
 | **Climate** | Parking climatization, cabin temperature, ventilation, seat and steering wheel heating, climate timers |
 | **Cabin air** | Pre-cleaning state, air quality index, PM2.5 |
-| **Availability** | Availability status, usage mode, per-domain data freshness |
+| **Availability** | Availability status, usage mode |
+| **Freshness** | When each domain's data was measured &mdash; see below |
 
 Everything is typed the way Home Assistant expects: doors and windows carry
 door/window device classes, warnings are `problem` sensors keeping the exact
@@ -67,6 +68,15 @@ options, and the position is a real `device_tracker`.
 
 **The integration only reads.** The Data Portal publishes no write endpoints,
 so nothing here can lock, unlock or start your car.
+
+> [!TIP]
+> **A poll is not a fresh measurement.** It returns whatever the car last
+> uploaded, which can be days old: on a real vehicle the doors-and-locks
+> payload was 36 hours old and the health payload 58, while battery and
+> climatization were minutes old. Every domain therefore has a *data updated*
+> sensor saying when the car measured it, so you can tell a current *locked*
+> from a stale one. Pair a reading with its timestamp in automations that
+> matter.
 
 ### Why 124 entities start disabled
 

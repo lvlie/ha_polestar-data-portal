@@ -47,6 +47,15 @@ NAME_OVERRIDES: dict[str, str] = {
     "battery_updated_at": "Battery data updated",
     # Availability
     "availability_updated_at": "Availability data updated",
+    # Per-domain freshness. A poll returns whatever the car last uploaded,
+    # which can be days old, so each domain says when its data was measured.
+    "exterior_updated_at": "Doors and locks data updated",
+    "health_updated_at": "Health data updated",
+    "climatization_updated_at": "Climatization data updated",
+    "pre_cleaning_updated_at": "Pre-cleaning data updated",
+    "charge_now_updated_at": "Charge now updated",
+    "charge_timer_updated_at": "Charge timer updated",
+    "parking_climate_timer_updated_at": "Parking climate timers updated",
     # Health
     "distance_to_service": "Distance to service",
     "days_to_service": "Days to service",
