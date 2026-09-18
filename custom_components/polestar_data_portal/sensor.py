@@ -35,6 +35,8 @@ from .const import (
     DOMAIN_AVAILABILITY,
     DOMAIN_BATTERY,
     DOMAIN_CHARGE_LOCATIONS,
+    DOMAIN_CHARGE_NOW,
+    DOMAIN_EXTERIOR,
     DOMAIN_GLOBAL_CHARGE_TIMER,
     DOMAIN_HEALTH,
     DOMAIN_IS_AT_CHARGE_LOCATION,
@@ -234,16 +236,27 @@ def _duration(
 
 
 def _updated_at(
-    key: str, api_domain: str, *keys: str
+    key: str, api_domain: str, *keys: str, epoch_millis: bool = False
 ) -> PolestarSensorEntityDescription:
-    """Build a diagnostic 'last updated' timestamp sensor."""
+    """Build a diagnostic 'last updated' timestamp sensor.
+
+    Every domain reports when its data was measured, but not in one shape: the
+    telemetry domains carry a protobuf ``timestamp`` object, while the charging
+    settings carry an ``updatedAt`` holding epoch milliseconds in a string.
+    ``epoch_millis`` picks the latter.
+
+    These matter more than their diagnostic category suggests. A poll returns
+    whatever the car last uploaded, which can be days old -- an exterior
+    payload observed at 36 hours, a health payload at 58 -- so without one of
+    these a locked/unlocked reading gives no hint of its own age.
+    """
     return PolestarSensorEntityDescription(
         key=key,
         translation_key=key,
         api_domain=api_domain,
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=_timestamp(*keys),
+        value_fn=_iso(*keys) if epoch_millis else _timestamp(*keys),
     )
 
 
@@ -655,6 +668,10 @@ SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
     ),
     _updated_at("battery_updated_at", DOMAIN_BATTERY, "timestamp"),
     *_energy_breakdown(),
+    # --- exterior ----------------------------------------------------------
+    # Every other exterior field is an opening or a lock, so it lives on the
+    # binary sensor platform; only the freshness stamp belongs here.
+    _updated_at("exterior_updated_at", DOMAIN_EXTERIOR, "timestamp"),
     # --- health ------------------------------------------------------------
     _enum_sensor(
         key="service_warning",
@@ -687,6 +704,7 @@ SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
         enabled=False,
     ),
     *_tyre_pressures(),
+    _updated_at("health_updated_at", DOMAIN_HEALTH, "timestamp"),
     # --- location ----------------------------------------------------------
     PolestarSensorEntityDescription(
         key="speed",
@@ -920,6 +938,7 @@ CHARGING_SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
         value_fn=_timestamp("endingAt"),
     ),
     *_seat_heating(),
+    _updated_at("climatization_updated_at", DOMAIN_PARKING_CLIMATIZATION, "timestamp"),
     # --- pre-cleaning ------------------------------------------------------
     _enum_sensor(
         key="pre_cleaning_status",
@@ -980,6 +999,7 @@ CHARGING_SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
         entity_registry_enabled_default=False,
         value_fn=_timestamp("measurementDate"),
     ),
+    _updated_at("pre_cleaning_updated_at", DOMAIN_PRE_CLEANING, "timestamp"),
     # --- amp limit ---------------------------------------------------------
     PolestarSensorEntityDescription(
         key="amp_limit",
@@ -1001,13 +1021,8 @@ CHARGING_SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
         entity_registry_enabled_default=False,
         value_fn=_number("pendingAmpLimit", "ampLimit"),
     ),
-    PolestarSensorEntityDescription(
-        key="amp_limit_updated_at",
-        translation_key="amp_limit_updated_at",
-        api_domain=DOMAIN_AMP_LIMIT,
-        device_class=SensorDeviceClass.TIMESTAMP,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=_iso("updatedAt"),
+    _updated_at(
+        "amp_limit_updated_at", DOMAIN_AMP_LIMIT, "updatedAt", epoch_millis=True
     ),
     # --- charge locations --------------------------------------------------
     PolestarSensorEntityDescription(
@@ -1018,6 +1033,16 @@ CHARGING_SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=_count("chargeLocations"),
         attributes_fn=_charge_location_attributes,
+    ),
+    # --- charge now --------------------------------------------------------
+    # The override flag itself is a binary sensor; this is when the car last
+    # confirmed it.
+    _updated_at(
+        "charge_now_updated_at",
+        DOMAIN_CHARGE_NOW,
+        "syncedOverrideChargeTimer",
+        "updatedAt",
+        epoch_millis=True,
     ),
     # --- global charge timer ----------------------------------------------
     PolestarSensorEntityDescription(
@@ -1041,6 +1066,14 @@ CHARGING_SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
         keys=("globalChargeTimer", "metadata", "syncStatus", "value"),
         entity_category=EntityCategory.DIAGNOSTIC,
         enabled=False,
+    ),
+    _updated_at(
+        "charge_timer_updated_at",
+        DOMAIN_GLOBAL_CHARGE_TIMER,
+        "globalChargeTimer",
+        "metadata",
+        "updatedAt",
+        epoch_millis=True,
     ),
     # --- is at charge location --------------------------------------------
     PolestarSensorEntityDescription(
@@ -1095,6 +1128,12 @@ CHARGING_SENSOR_DESCRIPTIONS: tuple[PolestarSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     *_timer_seat_heating(),
+    _updated_at(
+        "parking_climate_timer_updated_at",
+        DOMAIN_PARKING_CLIMATE_TIMER,
+        "updatedAt",
+        epoch_millis=True,
+    ),
     # --- target SoC --------------------------------------------------------
     PolestarSensorEntityDescription(
         key="target_battery_charge_level",

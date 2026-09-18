@@ -5,6 +5,45 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-09-18
+
+Found by checking a running instance against the car it was reading: a poll
+returns whatever the vehicle last uploaded, not a fresh measurement, and most
+domains never said how old that was.
+
+### Added
+
+- **Seven "data updated" sensors, one per domain that was missing one**: doors
+  and locks, health, climatization, pre-cleaning, charge now, charge timer and
+  parking climate timers. Six domains already had one; now thirteen of the
+  fifteen do.
+
+  This is not cosmetic. On the vehicle that prompted it, battery and
+  climatization were minutes old while the doors-and-locks payload was **36
+  hours** old and health **58 hours** -- so *Central lock: locked* looked
+  current when it described a day and a half ago, with nothing in Home
+  Assistant to say so. The two remaining domains are exempt on purpose:
+  charge locations publishes no car-side timestamp at all, and the arrival
+  time of *is at charge location* is already exposed as *Arrived at charge
+  location*.
+
+  They cost no extra API requests -- the timestamps are already in every poll.
+
+- A contract test asserting every documented domain has a freshness sensor,
+  with the two exemptions named and their reasons checked against the spec, so
+  a domain added later cannot quietly ship without one. Verified to name
+  exactly the seven domains this release fixes.
+- A regression test that all of them resolve against the recorded vehicle
+  payload. Half read a protobuf `timestamp` object and half an `updatedAt`
+  holding epoch milliseconds in a string; the spec types the latter as a bare
+  string, which is the same trap that left the charging timestamps unparsed
+  before 0.1.0.
+
+### Changed
+
+- `_updated_at` now builds both timestamp encodings, so the charging-settings
+  sensor that was written out by hand uses the same helper as the rest.
+
 ## [0.2.0] - 2026-09-17
 
 A review pass over the integration from four angles — an installing user, a
@@ -167,6 +206,7 @@ Initial release.
 - Diagnostics that redact credentials, VINs, coordinates and charge-location
   names.
 
+[0.3.0]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.3.0
 [0.2.0]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.2.0
 [0.1.1]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.1.1
 [0.1.0]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.1.0

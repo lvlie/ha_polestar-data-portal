@@ -131,3 +131,47 @@ def test_spec_is_valid_json_and_openapi_3() -> None:
     spec = json.loads((REPO / "resources" / "openapi.json").read_text())
     assert spec["openapi"].startswith("3.")
     assert spec["paths"]
+
+
+# Domains that legitimately have no freshness sensor, with the reason each one
+# is exempt. Anything else must expose when its data was measured.
+FRESHNESS_EXEMPT = {
+    # The spec gives this domain no car-side timestamp at all: its only date is
+    # metaReceivedAt, which is when Polestar's backend saw the event.
+    "charge_locations",
+    # Its arrivedAt is both the event time and the record time, and is already
+    # exposed as "Arrived at charge location".
+    "is_at_charge_location",
+}
+
+
+def test_every_domain_reports_when_its_data_was_measured() -> None:
+    """A reading with no age is a reading you cannot trust.
+
+    A poll returns whatever the car last uploaded, not a fresh measurement --
+    against a real vehicle the exterior payload was 36 hours old and the health
+    payload 58 -- so a domain without one of these leaves "locked" or "no
+    warning" looking current when it is days stale.
+    """
+    from custom_components.polestar_data_portal.sensor import ALL_SENSOR_DESCRIPTIONS
+
+    covered = {
+        description.api_domain
+        for description in ALL_SENSOR_DESCRIPTIONS
+        if description.key.endswith("_updated_at")
+    }
+    missing = set(API_DOMAIN_PATHS) - covered - FRESHNESS_EXEMPT
+    assert not missing, f"domains with no freshness sensor: {sorted(missing)}"
+
+
+def test_no_freshness_sensor_is_exempted_without_cause() -> None:
+    """The exemption list cannot quietly outlive its reason."""
+    assert set(API_DOMAIN_PATHS) >= FRESHNESS_EXEMPT
+
+    spec = load_spec()
+    for domain in FRESHNESS_EXEMPT:
+        schema = spec["paths"][API_DOMAIN_PATHS[domain]]["get"]["responses"]["200"]
+        body = json.dumps(schema)
+        assert "updatedAtTimestamp" not in body, (
+            f"{domain} now publishes a timestamp and should have a freshness sensor"
+        )

@@ -193,3 +193,30 @@ def test_scheduled_car_has_no_new_unknown_entities(scheduled: dict[str, Any]) ->
         key for key, enabled, value in _evaluate(scheduled) if enabled and value is None
     }
     assert unknown == EXPECTED_UNKNOWN
+
+
+def test_every_domain_says_how_old_its_data_is(real: dict[str, Any]) -> None:
+    """The freshness sensors resolve on a real payload, in both encodings.
+
+    Half of them read a protobuf ``timestamp`` object and half an ``updatedAt``
+    holding epoch milliseconds in a string. The spec types the latter as a bare
+    string, so only real traffic shows which domain uses which -- the same trap
+    that left the charging timestamps unparsed before 0.1.0.
+    """
+    freshness = {
+        description.key: description.value_fn(real[description.api_domain])
+        for description in sensor.ALL_SENSOR_DESCRIPTIONS
+        if description.key.endswith("_updated_at") and description.api_domain in real
+    }
+
+    # Both shapes are represented, so neither parser can rot unnoticed.
+    assert "exterior_updated_at" in freshness  # protobuf timestamp
+    assert "charge_now_updated_at" in freshness  # epoch millis in a string
+
+    unresolved = sorted(key for key, value in freshness.items() if value is None)
+    assert not unresolved, f"freshness sensors with no value: {unresolved}"
+
+    # A plausible date, not 1970 -- the failure mode when epoch millis are read
+    # as epoch seconds.
+    for key, value in freshness.items():
+        assert value.year >= 2020, f"{key} parsed to {value}"
