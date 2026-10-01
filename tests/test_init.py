@@ -211,6 +211,17 @@ async def test_configured_interval_is_honoured(
     assert coordinator.update_interval == timedelta(minutes=60)
 
 
+def _device(hass: HomeAssistant, entry: MockConfigEntry, vin: str) -> dr.DeviceEntry:
+    """Return the entry's device for a VIN.
+
+    ``DeviceRegistry.async_get_device`` is deprecated from Home Assistant
+    2026.9 and its replacement does not exist in older releases, so look the
+    device up through the config entry, which works on both.
+    """
+    devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
+    return next(d for d in devices if (DOMAIN, vin) in d.identifiers)
+
+
 async def test_single_vehicle_device_name_is_short(
     hass: HomeAssistant,
     aioclient_mock: AiohttpClientMocker,
@@ -220,8 +231,7 @@ async def test_single_vehicle_device_name_is_short(
     mock_full_account(aioclient_mock)
     await setup_integration(hass, mock_config_entry)
 
-    devices = dr.async_get(hass)
-    device = devices.async_get_device(identifiers={(DOMAIN, VIN)})
+    device = _device(hass, mock_config_entry, VIN)
     assert device.name == "Polestar"
     # The full VIN is still recorded, just not in the name.
     assert device.serial_number == VIN
@@ -239,8 +249,7 @@ async def test_several_vehicles_get_distinct_names(
     mock_full_account(aioclient_mock, vins)
     await setup_integration(hass, mock_config_entry)
 
-    devices = dr.async_get(hass)
-    names = {devices.async_get_device(identifiers={(DOMAIN, vin)}).name for vin in vins}
+    names = {_device(hass, mock_config_entry, vin).name for vin in vins}
     assert names == {"Polestar 123456", "Polestar 654321"}
 
     assert hass.states.get("sensor.polestar_123456_battery")
@@ -269,6 +278,5 @@ async def test_a_vehicle_that_fails_setup_still_shapes_the_names(
     await setup_integration(hass, mock_config_entry)
 
     assert len(mock_config_entry.runtime_data.coordinators) == 1
-    devices = dr.async_get(hass)
-    device = devices.async_get_device(identifiers={(DOMAIN, vins[0])})
+    device = _device(hass, mock_config_entry, vins[0])
     assert device.name == "Polestar 123456"
