@@ -19,7 +19,7 @@ jobs:
 
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          python-version: "3.14"
           cache: pip
 
       - name: Install dependencies
@@ -41,7 +41,7 @@ jobs:
 
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          python-version: "3.14"
           cache: pip
 
       - name: Install dependencies
@@ -66,7 +66,7 @@ jobs:
 
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          python-version: "3.14"
 
       - name: Start Prism mock of the Polestar OpenAPI spec
         run: |
