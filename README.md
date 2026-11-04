@@ -142,7 +142,7 @@ your `config/custom_components/` directory and restart.
 | Setup field | Where it comes from |
 | --- | --- |
 | **App client ID** | The *App client ID* on the credential page |
-| **Expected x-client-id header** | Your account ID &mdash; **not** the same as the App client ID |
+| **Expected x-client-id header** | Your account ID &mdash; **not** the same as the App client ID. You can find it at <https://www.polestar.com/login/account> at the bottom under 'advanced'. |
 | **Client secret** | Shown **once**, when the credential is created |
 | **M2M token endpoint** | The *M2M Token Endpoint* on the credential page |
 
