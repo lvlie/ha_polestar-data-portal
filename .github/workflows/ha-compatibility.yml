@@ -41,7 +41,26 @@ jobs:
           esac
           python -c "from homeassistant.const import __version__ as v; print('Home Assistant', v)"
 
+      # pytest-homeassistant-custom-component pins one stable Home Assistant
+      # release and imports its internals, so it often cannot load a newer
+      # release (beta, dev, or a stable it has not caught up with yet). That
+      # is a harness lag, not a break in this integration, so skip the unit
+      # tests with a warning instead of failing; the container smoke test
+      # below still exercises the integration on every channel.
+      - name: Check the test harness supports this release
+        id: harness
+        run: |
+          if python -c "import pytest_homeassistant_custom_component.plugins" 2>harness.err; then
+            echo "supported=true" >> "$GITHUB_OUTPUT"
+          else
+            tail -1 harness.err
+            pinned=$(pip show pytest-homeassistant-custom-component | sed -n 's/^Version: //p')
+            echo "::warning::pytest-homeassistant-custom-component $pinned cannot load this Home Assistant release; skipping unit tests (smoke test still runs)."
+            echo "supported=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run pytest
+        if: steps.harness.outputs.supported == 'true'
         run: python -m pytest -q
 
   smoke:
