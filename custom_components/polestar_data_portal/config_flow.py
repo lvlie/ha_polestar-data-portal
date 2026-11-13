@@ -43,6 +43,7 @@ _LOGGER = logging.getLogger(__name__)
 # Shown in the form description so users land on the account picker rather
 # than a market-specific URL that may not exist for them.
 PORTAL_URL = "https://data-portal.polestar.com"
+ACCOUNT_URL = "https://www.polestar.com/login/account"
 
 # Fields that may legitimately be submitted empty.
 OPTIONAL_FIELDS = frozenset({CONF_DELEGATED_ACCOUNT_ID})
@@ -150,7 +151,10 @@ class PolestarDataPortalConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=_credentials_schema(user_input),
             errors=errors,
-            description_placeholders={"portal_url": PORTAL_URL},
+            description_placeholders={
+                "portal_url": PORTAL_URL,
+                "account_url": ACCOUNT_URL,
+            },
         )
 
     async def async_step_reauth(
@@ -187,7 +191,10 @@ class PolestarDataPortalConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="reauth_confirm",
             data_schema=_credentials_schema(user_input or entry.data),
             errors=errors,
-            description_placeholders={"portal_url": PORTAL_URL},
+            description_placeholders={
+                "portal_url": PORTAL_URL,
+                "account_url": ACCOUNT_URL,
+            },
         )
 
     @staticmethod
