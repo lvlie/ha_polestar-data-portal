@@ -11,7 +11,6 @@ enum options Home Assistant validates against stay in sync with the API.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -33,7 +32,12 @@ def common_prefix(values: list[str]) -> str:
     """Return the shared protobuf prefix, trimmed to an underscore boundary."""
     if len(values) < 2:
         return ""
-    prefix = os.path.commonprefix(values)
+    # Plain string prefix, not a path: os.path.commonprefix is flagged by ruff
+    # and its suggested os.path.commonpath would split on "/" instead.
+    prefix = values[0]
+    for value in values[1:]:
+        while not value.startswith(prefix):
+            prefix = prefix[:-1]
     return prefix[: prefix.rfind("_") + 1] if "_" in prefix else ""
 
 
