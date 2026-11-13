@@ -5,6 +5,23 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-11-13
+
+### Fixed
+
+- **Setup now says where to find the account ID.** The *Expected x-client-id
+  header* field told you to copy it from the credential page, where it is not
+  shown. The setup form and README now point to
+  <https://www.polestar.com/login/account>, at the bottom under *Advanced*.
+  Reported and documented by @allardmuis (#13, #14).
+
+### Changed
+
+- The monthly Home Assistant compatibility run skips the unit tests, with a
+  warning, when `pytest-homeassistant-custom-component` cannot yet load the
+  release under test (it lagged Home Assistant 2026.11). The container smoke
+  test still checks every channel, so real breakage is still reported (#12).
+
 ## [0.3.0] - 2026-09-18
 
 Found by checking a running instance against the car it was reading: a poll
@@ -206,6 +223,7 @@ Initial release.
 - Diagnostics that redact credentials, VINs, coordinates and charge-location
   names.
 
+[0.3.1]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.3.1
 [0.3.0]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.3.0
 [0.2.0]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.2.0
 [0.1.1]: https://github.com/lvlie/ha_polestar-data-portal/releases/tag/0.1.1
