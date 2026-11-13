@@ -50,7 +50,8 @@ async def test_user_flow_creates_entry(
     assert result["step_id"] == "user"
     # The portal URL is offered so users do not guess a market-specific path.
     assert result["description_placeholders"] == {
-        "portal_url": "https://data-portal.polestar.com"
+        "portal_url": "https://data-portal.polestar.com",
+        "account_url": "https://www.polestar.com/login/account",
     }
 
     result = await hass.config_entries.flow.async_configure(

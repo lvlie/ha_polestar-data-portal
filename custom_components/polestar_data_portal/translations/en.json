@@ -13,7 +13,7 @@
         },
         "data_description": {
           "client_id": "The App client ID shown on the credential page.",
-          "account_id": "The 'Expected x-client-id header' value from the credential page. This is your account ID and is not the same as the App client ID.",
+          "account_id": "Your Polestar account ID, sent as the x-client-id header. It is not the same as the App client ID. Find it at {account_url}, at the bottom under 'Advanced'.",
           "client_secret": "The client secret shown once when the credential is created. Create a new credential if you no longer have it.",
           "token_url": "The 'M2M Token Endpoint' shown on the credential page.",
           "delegated_account_id": "Only for third-party credentials: the account e-mail whose shared vehicles you want to read. Leave empty to use your own vehicles."
@@ -31,7 +31,7 @@
         },
         "data_description": {
           "client_id": "The App client ID shown on the credential page.",
-          "account_id": "The 'Expected x-client-id header' value from the credential page. This is your account ID and is not the same as the App client ID.",
+          "account_id": "Your Polestar account ID, sent as the x-client-id header. It is not the same as the App client ID. Find it at {account_url}, at the bottom under 'Advanced'.",
           "client_secret": "The client secret shown once when the credential is created. Create a new credential if you no longer have it.",
           "token_url": "The 'M2M Token Endpoint' shown on the credential page.",
           "delegated_account_id": "Only for third-party credentials: the account e-mail whose shared vehicles you want to read. Leave empty to use your own vehicles."

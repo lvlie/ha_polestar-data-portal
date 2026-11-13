@@ -185,8 +185,9 @@ def build() -> dict:
     credential_descriptions = {
         "client_id": "The App client ID shown on the credential page.",
         "account_id": (
-            "The 'Expected x-client-id header' value from the credential page. "
-            "This is your account ID and is not the same as the App client ID."
+            "Your Polestar account ID, sent as the x-client-id header. It is not "
+            "the same as the App client ID. Find it at {account_url}, at the "
+            "bottom under 'Advanced'."
         ),
         "client_secret": (
             "The client secret shown once when the credential is created. "
